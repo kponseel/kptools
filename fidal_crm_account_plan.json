@@ -48,9 +48,10 @@
       "languages_spoken": 20
     },
     "footprint": {
-      "offices_france": 87,
+      "offices_france": 90,
       "regional_divisions": 12,
       "international_presence": "Partners in 150+ countries via WTS Global and Unyer networks",
+      "brussels_office": "EU law matters",
       "overseas_offices": ["Saint-Denis de la Reunion", "Fort-de-France (Martinique)", "Pointe-a-Pitre (Guadeloupe)"]
     },
     "networks_and_alliances": [
@@ -62,7 +63,7 @@
       {
         "name": "Unyer",
         "type": "International legal alliance",
-        "description": "Co-founded with German firm Luther. 2,000+ lawyers/consultants in 10+ countries across Europe and Asia"
+        "description": "Co-founded with German firm Luther in 2021. 2,550+ lawyers/consultants in 14+ countries across Europe and Asia. EUR 650M combined revenue."
       }
     ],
     "subsidiaries": [
@@ -85,10 +86,14 @@
       }
     ],
     "clients_profile": {
-      "number_of_clients": 5000,
+      "number_of_clients": 69000,
       "client_types": ["PME", "ETI", "Multinationals", "Public institutions", "Non-profit organizations"],
       "note": "Over 100 years of client relationships"
     },
+    "documents_produced_annually": 520000,
+    "share_capital_eur": 6000000,
+    "ownership": "100% partner-owned. Over one-third of lawyers hold equity. 40% of shareholders are women. No external parent company.",
+    "kpmg_relationship": "ENDED July 2019. Non-exclusive cooperation agreement terminated. KPMG Avocats is now a direct competitor. Fidal is fully independent.",
     "rankings": [
       "Largest France-based law firm by revenues",
       "Top 100 largest law firms worldwide by revenues",
@@ -100,7 +105,7 @@
   "governance": {
     "structure": "Directoire (Executive Board) + Conseil de Surveillance (Supervisory Board)",
     "mandate_duration_years": 4,
-    "last_election": "2024 (renewed)",
+    "last_election": "July 2025 (renewed for 4-year term)",
     "directoire": [
       {
         "name": "Francois de Laage de Meux",
@@ -398,9 +403,16 @@
       "name": "Fidal IA",
       "partner": "Sopra Steria Next",
       "users": 1250,
-      "documents_indexed": 100000,
-      "versions": ["V1 (2023)", "V2 (2024)"],
-      "award": "Grand Prix Syntec Gold - Innovation & Insights"
+      "documents_indexed": 6000000,
+      "internal_sources": 40000,
+      "legal_open_data_items": 2700000,
+      "beta_stats": "119,000 messages / 28,000 conversations",
+      "impact": "Reduces average legal research time by 30%",
+      "llm_models": ["OpenAI (via Azure OpenAI)", "Mistral Large (via Azure OpenAI)"],
+      "architecture": "RAG (Retrieval-Augmented Generation)",
+      "versions": ["V1 (2023)", "V2 (2024)", "Agentic AI experimentation (2025-2026)"],
+      "award": "Grand Prix Syntec Gold - Innovation & Insights",
+      "ai_club": "~50 members overseeing AI prompt library and use cases"
     },
     "known_tech_partners": [
       "Microsoft (Azure Cloud)",
@@ -410,7 +422,13 @@
     ],
     "potential_existing_esignature": {
       "status": "Unknown - No public information about current e-signature solution",
-      "note": "Law firms in France commonly use: DocuSign, Yousign, Lex-Persona, or the CNB Cle Avocat. Fidal's software partners (LexisNexis Lexis PolyOffice, Septeo, SECIB) all integrate DocuSign."
+      "note": "Law firms in France commonly use: DocuSign, Yousign, Lex-Persona, Docaposte, Oodrive Sign, or the CNB Cle Avocat. Fidal's software partners (LexisNexis Lexis PolyOffice, Septeo, SECIB) all integrate DocuSign. Given data sovereignty concerns, may use a French provider.",
+      "opportunity": "520,000 documents/year across 90 offices with 69,000 clients = greenfield or displacement opportunity"
+    },
+    "microsoft_case_study": {
+      "title": "Fidal and Microsoft reinvent the legal profession with Azure OpenAI",
+      "url": "https://www.microsoft.com/en/customers/story/25200-fidal-azure-openai",
+      "note": "Jean-Godefroy Desmazieres quoted in this case study. Confirms deep Microsoft/Azure relationship."
     }
   },
 
@@ -423,7 +441,7 @@
         {"tier": "Regular signers (Junior lawyers/Jurists)", "count": 900, "usage": "Employment contracts, NDAs, standard legal docs"},
         {"tier": "Support/Admin staff", "count": 400, "usage": "Internal HR docs, procurement, admin"}
       ],
-      "estimated_envelope_volume": "High - 5,000+ clients, 87 offices, every engagement requires signed documents"
+      "estimated_envelope_volume": "Very High - 69,000 clients, 520,000 documents/year, 90 offices, every engagement requires signed documents"
     },
     "use_cases": [
       {
@@ -597,20 +615,21 @@
       {"name": "Hedwige de Villartay", "role": "Dir. Communication", "reports_to": "Directoire"},
       {"name": "Catherine Le Corre", "role": "Dir. Marketing", "reports_to": "Directoire"},
       {"name": "Thierry Schneider", "role": "Dir. Juridique Interne", "reports_to": "Directoire"},
+      {"name": "Jean-Henri Daudignon", "role": "Dir. Executif Gestion Sociale Interne", "reports_to": "Directoire"},
       {"name": "Christine Blaise-Engel", "role": "Resp. International - Legal", "reports_to": "Directoire"},
       {"name": "Laurent Leclercq", "role": "Resp. International - Tax", "reports_to": "Directoire"},
       {"name": "Aurelie Klein", "role": "Resp. Innovation Digitale", "reports_to": "Directoire / DSI"}
     ],
     "level_3_regional_directors": [
-      {"region": "Paris", "directors": ["Dominique Davodet", "Patrice Graillat"]},
+      {"region": "Paris", "directors": ["Sylvie Vaquieri", "Patrice Graillat"]},
       {"region": "Rhone-Alpes", "directors": ["Marie du Gardin (adjoint)"]},
       {"region": "Mediterranee", "directors": ["TBD"]},
       {"region": "Midi Toulousain", "directors": ["TBD"]},
       {"region": "Centre", "directors": ["Manuel Ardouin", "Francois Bretonniere (adjoint)"]},
       {"region": "Val de Loire Ocean", "directors": ["Nicolas Feraud", "Regis Petetin"]},
       {"region": "Hauts-de-France", "directors": ["Hugues Dubois", "Gregory Olczak-Godefert"]},
-      {"region": "Grand Est", "directors": ["Joel Frey (office dir. Strasbourg)"]},
-      {"region": "Bourgogne-Franche-Comte", "directors": ["Alexandre Bron"]},
+      {"region": "Grand Est", "directors": ["Fabien Blondelot (co-dir., Oct 2024)", "Anne-Sophie Peignelin (co-dir.)"]},
+      {"region": "Bourgogne-Franche-Comte", "directors": ["Alexandre Bron", "Nicolas Grebot (co-dir., Oct 2024)"]},
       {"region": "Aquitaine Atlantique", "directors": ["TBD"]},
       {"region": "Normandie", "directors": ["TBD"]},
       {"region": "Ouest / Bretagne", "directors": ["TBD"]}

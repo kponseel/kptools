@@ -11,13 +11,15 @@
 | **Industry** | Business Law Firm (Cabinet d'avocats d'affaires) |
 | **Revenue** | EUR 283M (2024) |
 | **Employees** | 2,300 total / 1,400 lawyers |
-| **Offices** | 87 in France + Overseas |
+| **Offices** | ~90 in France + Brussels + Overseas |
 | **Regional Divisions** | 12 |
-| **Clients** | 5,000+ (PME, ETI, Multinationals) |
+| **Clients** | 69,000 (PME, ETI, Multinationals) |
 | **HQ** | La Defense, Courbevoie (92) |
 | **Website** | [fidal.com](https://www.fidal.com) |
 | **Founded** | 1922 |
-| **International** | WTS Global + Unyer (with Luther) - 150+ countries |
+| **Documents/Year** | 520,000 |
+| **International** | WTS Global + Unyer (with Luther, 2,550 lawyers, EUR 650M) - 150+ countries |
+| **Ownership** | 100% partner-owned. No parent company. KPMG relationship ended July 2019. |
 
 ---
 
@@ -105,7 +107,7 @@ FUNCTIONAL DIRECTORS                    REGIONAL DIRECTORS (x12)
 | **Hosting** | Digital Realty (Green IT, carbon neutral) |
 | **SaaS Apps** | 150 applications |
 | **Servers** | 450 VMs (down from 1,100), target 300 |
-| **AI** | Fidal IA (Sopra Steria Next) - 1,250 users, 100K docs |
+| **AI** | Fidal IA (Sopra Steria Next) - 1,250 users, 6M docs, RAG on Azure OpenAI + Mistral |
 | **E-Signature** | Unknown current solution |
 | **Key insight** | Already managing 150 SaaS apps - DocuSign fits naturally |
 
@@ -114,7 +116,7 @@ FUNCTIONAL DIRECTORS                    REGIONAL DIRECTORS (x12)
 ## DocuSign Opportunity - Use Cases (Priority Order)
 
 ### P1 - Quick Wins
-1. **Convention d'honoraires** (Fee agreements) - Every new client engagement across 87 offices
+1. **Convention d'honoraires** (Fee agreements) - Every new client engagement across 90 offices (69,000 clients, 520K docs/year)
 2. **HR / Employment contracts** - 2,300 employees, internal quick win with Carole Chatelain
 3. **M&A / PE Closing documents** - 100+ docs per deal, massive time savings (ref: Scotto & Associes)
 
@@ -187,14 +189,14 @@ FUNCTIONAL DIRECTORS                    REGIONAL DIRECTORS (x12)
 
 | Region | Directors | Key Offices |
 |--------|----------|-------------|
-| Paris | Dominique Davodet, Patrice Graillat | La Defense, Versailles, Creteil, DOM-TOM |
+| Paris | Sylvie Vaquieri, Patrice Graillat | La Defense, Versailles, Creteil, DOM-TOM |
 | Rhone-Alpes | Marie du Gardin (adj.) | Lyon, Annecy, Chambery, Grenoble, Valence |
 | Mediterranee | TBD | Marseille, Nice, Montpellier, Avignon |
 | Midi Toulousain | TBD | Toulouse, Agen, Carcassonne |
 | Centre | Manuel Ardouin, F. Bretonniere (adj.) | Clermont-Ferrand, Limoges, Bourges |
 | Val de Loire Ocean | Nicolas Feraud, Regis Petetin | Nantes, Le Mans, Orleans, Angers |
 | Hauts-de-France | Hugues Dubois, G. Olczak-Godefert | Lille, Reims |
-| Grand Est | Joel Frey (office dir.) | Strasbourg, Nancy |
+| Grand Est | Fabien Blondelot, Anne-Sophie Peignelin | Strasbourg, Nancy, Metz, Reims, Colmar |
 | Bourgogne-Franche-Comte | Alexandre Bron | Dijon, Belfort, Besancon |
 | Aquitaine Atlantique | TBD | Bordeaux, Bayonne, Pau, Poitiers |
 | Normandie | TBD | Rouen, Caen |
@@ -225,6 +227,9 @@ FUNCTIONAL DIRECTORS                    REGIONAL DIRECTORS (x12)
 - [DocuSign - Septeo Case Study](https://www.docusign.com/fr-fr/temoignages-client/septeo-optimise-la-signature-et-la-verification-didentite-grace-a-docusign)
 - [Fidal - Philippe Pasquali CDO](https://www.fidal.com/en/node/17555)
 - [Wikipedia - Fidal](https://en.wikipedia.org/wiki/Fidal)
+- [Microsoft Customer Story - Fidal Azure OpenAI](https://www.microsoft.com/en/customers/story/25200-fidal-azure-openai)
+- [Fidal Directoire Renewal July 2025](https://www.fidal.com/en/node/18528)
+- [Fidal Regional Appointments Oct 2024](https://www.fidal.com/en/node/16210)
 - LinkedIn profiles of key contacts
 
 ---
