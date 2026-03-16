@@ -1,0 +1,650 @@
+{
+  "metadata": {
+    "account_name": "Fidal",
+    "crm_owner": "DocuSign France - Account Executive",
+    "created_date": "2026-03-16",
+    "last_updated": "2026-03-16",
+    "data_sources": [
+      "fidal.com",
+      "linkedin.com",
+      "decideurs-juridiques.com",
+      "lemondedudroit.fr",
+      "larevuedudigital.com",
+      "wikipedia.org",
+      "pappers.fr",
+      "republik-it.fr",
+      "it-expertise.com"
+    ],
+    "version": "1.0",
+    "export_format": "JSON - compatible with Salesforce, HubSpot, Pipedrive, and general CRM imports"
+  },
+
+  "company": {
+    "legal_name": "FIDAL",
+    "legal_form": "SELAS (Societe d'Exercice Liberal par Actions Simplifiee)",
+    "siren": "525031522",
+    "industry": "Legal Services / Business Law Firm",
+    "sub_industry": "Cabinets d'avocats d'affaires",
+    "description": "Fidal is the largest France-based business law firm by revenues, and one of the 100 largest law firms in the world. Founded in 1922, Fidal advises businesses on all aspects of business law including tax, corporate, labor, M&A, real estate, IP, and digital/tech law.",
+    "founded": 1922,
+    "headquarters": {
+      "address": "4-6 avenue d'Alsace",
+      "city": "Courbevoie - La Defense",
+      "postal_code": "92400",
+      "country": "France"
+    },
+    "website": "https://www.fidal.com",
+    "linkedin": "https://www.linkedin.com/company/fidal",
+    "financials": {
+      "annual_revenue_eur": 283000000,
+      "revenue_source": "Decideurs 100 ranking (2024)",
+      "revenue_note": "Largest France-based law firm by revenue"
+    },
+    "headcount": {
+      "total_employees": 2300,
+      "lawyers_and_jurists": 1400,
+      "tax_lawyers": 250,
+      "nationalities": 17,
+      "languages_spoken": 20
+    },
+    "footprint": {
+      "offices_france": 87,
+      "regional_divisions": 12,
+      "international_presence": "Partners in 150+ countries via WTS Global and Unyer networks",
+      "overseas_offices": ["Saint-Denis de la Reunion", "Fort-de-France (Martinique)", "Pointe-a-Pitre (Guadeloupe)"]
+    },
+    "networks_and_alliances": [
+      {
+        "name": "WTS Global",
+        "type": "International tax advisory network",
+        "description": "Independent law/consulting firms with strong local market presence"
+      },
+      {
+        "name": "Unyer",
+        "type": "International legal alliance",
+        "description": "Co-founded with German firm Luther. 2,000+ lawyers/consultants in 10+ countries across Europe and Asia"
+      }
+    ],
+    "subsidiaries": [
+      {
+        "name": "Fidal Innovation",
+        "activity": "Industrial property / Patent engineering / CIR (Research Tax Credit) consulting"
+      },
+      {
+        "name": "Fidal Fiducie",
+        "activity": "Fiduciary services"
+      },
+      {
+        "name": "Fidal Formations",
+        "activity": "Professional legal training delivered by Fidal lawyers",
+        "website": "https://www.fidalformations.fr"
+      },
+      {
+        "name": "Fidal Notaires",
+        "activity": "Notarial services"
+      }
+    ],
+    "clients_profile": {
+      "number_of_clients": 5000,
+      "client_types": ["PME", "ETI", "Multinationals", "Public institutions", "Non-profit organizations"],
+      "note": "Over 100 years of client relationships"
+    },
+    "rankings": [
+      "Largest France-based law firm by revenues",
+      "Top 100 largest law firms worldwide by revenues",
+      "15 practices classified by The Legal 500",
+      "Grand Prix Syntec - Gold in Innovation & Insights category (Fidal IA project)"
+    ]
+  },
+
+  "governance": {
+    "structure": "Directoire (Executive Board) + Conseil de Surveillance (Supervisory Board)",
+    "mandate_duration_years": 4,
+    "last_election": "2024 (renewed)",
+    "directoire": [
+      {
+        "name": "Francois de Laage de Meux",
+        "title": "President du Directoire / Chairman of the Executive Committee",
+        "specialty": "Corporate Law (Droit des societes)",
+        "age": 57,
+        "joined_fidal": 1993,
+        "location": "Bordeaux / Paris La Defense",
+        "education": "Droit des affaires (Bordeaux), DJCE (Poitiers), Talents Up / HEC",
+        "career_path": "Bureau de Saintes (1993) > Associe (2001) > Dir. dept droit societes Bordeaux (2002) > Dir. regional Aquitaine (2008) > President Directoire (2020, renewed 2024)",
+        "linkedin": "https://www.linkedin.com/in/francois-de-laage-de-meux-1b02a153",
+        "relevance_to_docusign": "EXECUTIVE_SPONSOR - Ultimate decision maker. Sets firm strategy including digital transformation priorities."
+      },
+      {
+        "name": "Christophe Mikolajczak",
+        "title": "Directeur General / Managing Director",
+        "specialty": "Tax Law (Droit fiscal)",
+        "age": 59,
+        "joined_fidal": 1989,
+        "location": "Paris La Defense",
+        "education": "Master droit des affaires (Caen), DJCE (Poitiers)",
+        "career_path": "Dept fiscal Saint-Lo (1989) > Bureau Caen (1994) > Dir. adjoint dept fiscal (2000) > Dir. dept fiscal (2004) > Dir. regional Haute-Normandie (2010) > DG (2020, renewed 2024)",
+        "linkedin": "https://www.linkedin.com/in/christophe-mikolajczak",
+        "relevance_to_docusign": "EXECUTIVE_SPONSOR - Co-manages firm operations. Key decision maker for enterprise investments."
+      },
+      {
+        "name": "Jean-Godefroy Desmazieres",
+        "title": "Directeur General Delegue / Deputy Managing Director",
+        "specialty": "Tax Law (Droit fiscal)",
+        "age": 45,
+        "joined_fidal": 2005,
+        "location": "Paris La Defense",
+        "education": "Master droit des affaires (Paris II Assas), Sciences Po, IHEI (Paris I), Mastere HEC, CAPA (Versailles)",
+        "career_path": "Arthur Andersen > Taj/Deloitte > Fidal dept fiscal Nantes (2005) > Associe (2009) > Dir. bureaux Vendee/Angers > Dir. regional Rhone-Alpes (2016) > DGD (2020, renewed 2024)",
+        "linkedin": "https://www.linkedin.com/in/jean-godefroy-desmazieres-0931979",
+        "relevance_to_docusign": "EXECUTIVE_SPONSOR - Youngest directoire member. Speaks at IA Summit Lille 2026 - shows interest in tech/innovation.",
+        "speaking_engagements": ["IA Summit Lille 2026"]
+      }
+    ],
+    "directeur_general_delegue_operations": {
+      "name": "Eric Joanne",
+      "title": "Directeur General Delegue (Operations)",
+      "specialty": "Tax Law",
+      "joined_fidal": 1991,
+      "location": "Paris La Defense",
+      "education": "IEP Bordeaux, Ecole Nationale des Impots",
+      "career_path": "Administration fiscale > Bureau Le Mans (1991) > Dir. associe (1998) > Dir. bureau Orleans (2000) > Dir. regional Nantes (2008) > Co-dir. Val de Loire Ocean (2016) > DGD (2019)",
+      "relevance_to_docusign": "INFLUENCER - Supervises regional directors. Can champion or block rollout decisions."
+    },
+    "conseil_de_surveillance": {
+      "president": {
+        "name": "Joel Frey",
+        "title": "President du Conseil de Surveillance / Chairman of the Supervisory Board",
+        "specialty": "Corporate Law (Droit des societes)",
+        "location": "Strasbourg",
+        "languages": ["French", "German", "English"],
+        "joined_fidal": 1988,
+        "education": "DESS Droit des affaires, DJCE (Universite de Strasbourg)",
+        "additional_roles": "Office Director Strasbourg, active in Germany/Austria/Switzerland desks",
+        "relevance_to_docusign": "INFLUENCER - Oversees governance. May validate strategic tech investments."
+      }
+    }
+  },
+
+  "key_contacts_technology_and_operations": [
+    {
+      "name": "Stephane Mariotto",
+      "title": "DSI / CIO and CISO (Chief Information Officer & Chief Information Security Officer)",
+      "department": "Direction des Systemes d'Information",
+      "reports_to": "Directoire (directly)",
+      "location": "Paris La Defense / Ile-de-France",
+      "linkedin": "https://www.linkedin.com/in/stmariotto",
+      "education": "N90, HEC Paris (2019-2022)",
+      "joined_fidal": 2016,
+      "previous_experience": ["Groupe Le Duff", "Mutuelle des Architectes Francais", "The Walt Disney Company", "Lyonnaise des Eaux"],
+      "key_projects": [
+        {
+          "name": "Move to Cloud (Azure)",
+          "description": "Migration from on-premise to Microsoft Azure Cloud. 150 applications to SaaS. Reduced from 1,100 servers to 450 virtual servers, targeting 300.",
+          "partner": "ITS Integra",
+          "hosting": "Digital Realty (ex-Interxion) data centers - Green IT / carbon neutral"
+        },
+        {
+          "name": "Fidal IA",
+          "description": "AI assistant built with Sopra Steria Next for 1,250 lawyers. Over 100,000 legal documents integrated. Won Gold at Grand Prix Syntec (Innovation & Insights). V1 in 2023, V2 in 2024.",
+          "award": "Grand Prix Syntec - Gold (Innovation & Insights)"
+        }
+      ],
+      "infrastructure_notes": "Hybrid SI - own infrastructure for non-cloud-eligible workloads. Azure Cloud for majority. 2/3 target in Cloud.",
+      "team_manages": "IT, Digital, InfoSec for Fidal and subsidiaries (Fidal Innovation, Fidal Formations)",
+      "relevance_to_docusign": "DECISION_MAKER_TECHNICAL - Primary technical buyer. Evaluates, validates, and deploys all enterprise software. Direct report to directoire. Must approve any e-signature platform. Key person to engage.",
+      "docusign_angle": "Cloud-first strategy (Azure) aligns with DocuSign SaaS. Already managing 150 SaaS apps. eSignature fits into digital transformation roadmap. Security-conscious (CISO role) - emphasize compliance/eIDAS."
+    },
+    {
+      "name": "Aurelie Klein",
+      "title": "Responsable Nationale Innovation Digitale / National Head of Digital Innovation",
+      "rank": "Counsel (Of Counsel)",
+      "department": "Digital, Tech & Data",
+      "location": "Strasbourg",
+      "linkedin": "https://www.linkedin.com/in/aurelie-klein-9712001a",
+      "specialty": "Digital/IT law, Data protection, IP, AI",
+      "additional_role": "Maitre de conference associe, Universite de Strasbourg",
+      "key_contributions": ["Fidal IA project (key contributor)", "Digital innovation strategy"],
+      "relevance_to_docusign": "CHAMPION_POTENTIAL - Drives digital innovation from the legal practice side. Understands e-signature legal frameworks (eIDAS). Can be internal champion for DocuSign adoption among lawyers.",
+      "docusign_angle": "Expert in digital law and eIDAS. Can validate legal compliance of DocuSign. Could co-author thought leadership content with DocuSign on e-signature in law firms."
+    },
+    {
+      "name": "Philippe Pasquali",
+      "title": "Former CDO / Directeur Innovation et Transformation Digitale (2019-2020)",
+      "status": "DEPARTED - Now President of C-Level Advisory",
+      "linkedin": "https://www.linkedin.com/in/philippe-pasquali-5105958",
+      "education": "Ecole Centrale de Nantes, Ecole de Commerce de Paris",
+      "previous_experience": ["Societe Generale (19 years, CDO)", "AXA", "Air Liquide"],
+      "note": "Recruited to accelerate digital transformation. Left after ~1 year. Role may not have been replaced - digital transformation now led by Stephane Mariotto (DSI) and Aurelie Klein.",
+      "relevance_to_docusign": "HISTORICAL_CONTEXT - Understanding why CDO left helps position DocuSign pitch. Digital transformation is now embedded in DSI mandate."
+    }
+  ],
+
+  "key_contacts_functional_departments": [
+    {
+      "name": "Nathalie Deperrois",
+      "title": "Directrice Administrative et Financiere (DAF/CFO)",
+      "department": "Finance & Administration",
+      "relevance_to_docusign": "ECONOMIC_BUYER - Controls budget. Must approve large software investments. Key for pricing negotiations and ROI discussions."
+    },
+    {
+      "name": "Carole Chatelain",
+      "title": "Directrice des Ressources Humaines (DRH/CHRO)",
+      "department": "Human Resources",
+      "relevance_to_docusign": "USER_BUYER - HR generates high volume of signature-requiring documents: employment contracts, amendments, NDA, non-compete clauses. Potential quick win use case for DocuSign."
+    },
+    {
+      "name": "Hedwige de Villartay",
+      "title": "Directrice de la Communication",
+      "department": "Communications",
+      "relevance_to_docusign": "INFLUENCER - Could help with internal change management and communication around DocuSign adoption."
+    },
+    {
+      "name": "Catherine Le Corre",
+      "title": "Directrice Marketing",
+      "department": "Marketing",
+      "relevance_to_docusign": "INFLUENCER - Potential co-marketing opportunities. Client-facing digital experience."
+    },
+    {
+      "name": "Thierry Schneider",
+      "title": "Directeur Juridique Interne",
+      "department": "In-house Legal (Direction Juridique)",
+      "relevance_to_docusign": "DECISION_MAKER_LEGAL - Validates legal compliance of tools used internally. Must confirm DocuSign meets firm's own legal standards and client confidentiality requirements."
+    },
+    {
+      "name": "Christine Blaise-Engel",
+      "title": "Responsable International - Legal",
+      "department": "International Development",
+      "relevance_to_docusign": "INFLUENCER - International operations may require cross-border e-signatures. DocuSign's global compliance (eIDAS, UETA, ESIGN) is a differentiator."
+    },
+    {
+      "name": "Laurent Leclercq",
+      "title": "Responsable International - Tax",
+      "department": "International Development / WTS Global",
+      "relevance_to_docusign": "INFLUENCER - Tax advisory across borders involves significant document signing workflows."
+    }
+  ],
+
+  "regional_directors": {
+    "note": "Fidal operates 12 regional divisions. Regional directors are key for rollout strategy as they manage operational teams.",
+    "regions": [
+      {
+        "name": "Paris",
+        "offices": ["La Defense", "Versailles", "Meaux/Marne-la-Vallee", "Creteil", "Saint-Denis de la Reunion", "Fort-de-France", "Pointe-a-Pitre"],
+        "headcount": "400 professionals (210 lawyers/jurists)",
+        "directors": [
+          {"name": "Dominique Davodet", "role": "Co-directeur regional"},
+          {"name": "Patrice Graillat", "role": "Co-directeur regional"}
+        ]
+      },
+      {
+        "name": "Rhone-Alpes",
+        "offices": ["Lyon", "Annecy", "Chambery", "Grenoble", "Valence"],
+        "directors": [
+          {"name": "Marie du Gardin", "role": "Directeur regional adjoint (2016)"}
+        ],
+        "note": "Berceau (birthplace) of Fidal. Previously directed by Jean-Godefroy Desmazieres before his election to Directoire."
+      },
+      {
+        "name": "Mediterranee",
+        "offices": ["Avignon", "Marseille", "Montpellier", "Nice", "Nimes", "Six-Fours-les-Plages"],
+        "headcount": "70 professionals"
+      },
+      {
+        "name": "Midi Toulousain",
+        "offices": ["Toulouse", "Agen", "Carcassonne", "Castres", "Rodez"]
+      },
+      {
+        "name": "Centre",
+        "offices": ["Aurillac", "Bourges", "Brive-la-Gaillarde", "Clermont-Ferrand", "Limoges", "Perigueux", "Vichy"],
+        "headcount": "60+ lawyers and jurists",
+        "directors": [
+          {"name": "Manuel Ardouin", "role": "Directeur regional"},
+          {"name": "Francois Bretonniere", "role": "Directeur regional adjoint"}
+        ]
+      },
+      {
+        "name": "Val de Loire Ocean",
+        "offices": ["Nantes", "Le Mans", "Orleans", "Angers", "Laval"],
+        "directors": [
+          {"name": "Nicolas Feraud", "role": "Co-directeur regional"},
+          {"name": "Regis Petetin", "role": "Co-directeur regional"}
+        ],
+        "note": "Created in 2016 from merger of Le Mans and Nantes regional divisions."
+      },
+      {
+        "name": "Hauts-de-France",
+        "offices": ["Lille", "Reims"],
+        "directors": [
+          {"name": "Hugues Dubois", "role": "Co-directeur regional"},
+          {"name": "Gregory Olczak-Godefert", "role": "Co-directeur regional"}
+        ]
+      },
+      {
+        "name": "Grand Est",
+        "offices": ["Strasbourg", "Nancy"],
+        "directors": [
+          {"name": "Joel Frey", "role": "Office Director Strasbourg (also Chairman Supervisory Board)"}
+        ]
+      },
+      {
+        "name": "Bourgogne-Franche-Comte",
+        "offices": ["Dijon", "Belfort", "Besancon"],
+        "directors": [
+          {"name": "Alexandre Bron", "role": "Directeur regional"}
+        ]
+      },
+      {
+        "name": "Aquitaine Atlantique",
+        "offices": ["Bordeaux", "Saintes", "Bayonne", "Pau", "Poitiers"],
+        "note": "Previously co-directed by Francois de Laage de Meux before his election as President of Directoire."
+      },
+      {
+        "name": "Normandie",
+        "offices": ["Rouen", "Caen", "Saint-Lo"],
+        "note": "Christophe Mikolajczak was previously Dir. regional Haute-Normandie."
+      },
+      {
+        "name": "Ouest / Bretagne",
+        "offices": ["Rennes", "Saint-Malo", "Brest", "Quimper", "Vannes", "Saint-Brieuc"],
+        "note": "Fidal recently opened a new office in Saint-Malo to strengthen presence in Brittany."
+      }
+    ]
+  },
+
+  "practice_areas": [
+    "Tax Law (Droit fiscal) - 250+ specialized lawyers",
+    "Corporate Law / M&A (Droit des societes / Fusions-Acquisitions)",
+    "Labor & Social Security Law (Droit social)",
+    "Economic Law / Competition",
+    "Real Estate Law (Droit immobilier) - 30 dedicated lawyers",
+    "Intellectual Property (Propriete intellectuelle)",
+    "Digital, Tech & Data",
+    "Environmental Law (Droit de l'environnement)",
+    "Public Law (Droit public)",
+    "Private Equity",
+    "Dispute Resolution / Litigation",
+    "White-Collar Criminal Law (Droit penal des affaires)",
+    "Private Client Law (Patrimoine prive)",
+    "Rural Law (Droit rural)",
+    "Corporate Restructuring",
+    "International Mobility",
+    "Finance & Financial Services",
+    "EU AI Act Compliance"
+  ],
+
+  "cross_practice_groups": [
+    "Customs (Douanes)",
+    "Sports Law",
+    "Corporate Philanthropy & Foundations",
+    "Healthcare",
+    "Innovation",
+    "Equine Law",
+    "Payroll (Paie)",
+    "Europe"
+  ],
+
+  "technology_landscape": {
+    "cloud_strategy": "Cloud-first - Microsoft Azure",
+    "cloud_partner": "ITS Integra (infogérance / managed services)",
+    "hosting": "Digital Realty (ex-Interxion) - Green IT / Carbon neutral",
+    "saas_applications": 150,
+    "infrastructure": {
+      "current_servers": 450,
+      "target_servers": 300,
+      "cloud_ratio_target": "2/3 in cloud",
+      "migration_status": "In progress - Move to Cloud"
+    },
+    "ai_initiative": {
+      "name": "Fidal IA",
+      "partner": "Sopra Steria Next",
+      "users": 1250,
+      "documents_indexed": 100000,
+      "versions": ["V1 (2023)", "V2 (2024)"],
+      "award": "Grand Prix Syntec Gold - Innovation & Insights"
+    },
+    "known_tech_partners": [
+      "Microsoft (Azure Cloud)",
+      "ITS Integra (managed services)",
+      "Digital Realty (data centers)",
+      "Sopra Steria Next (AI/Fidal IA)"
+    ],
+    "potential_existing_esignature": {
+      "status": "Unknown - No public information about current e-signature solution",
+      "note": "Law firms in France commonly use: DocuSign, Yousign, Lex-Persona, or the CNB Cle Avocat. Fidal's software partners (LexisNexis Lexis PolyOffice, Septeo, SECIB) all integrate DocuSign."
+    }
+  },
+
+  "docusign_opportunity_analysis": {
+    "deal_sizing": {
+      "total_users_potential": 2300,
+      "primary_users": 1400,
+      "user_tiers": [
+        {"tier": "Heavy signers (Partners/Associates)", "count": 500, "usage": "Client engagement letters, contracts, M&A closing docs"},
+        {"tier": "Regular signers (Junior lawyers/Jurists)", "count": 900, "usage": "Employment contracts, NDAs, standard legal docs"},
+        {"tier": "Support/Admin staff", "count": 400, "usage": "Internal HR docs, procurement, admin"}
+      ],
+      "estimated_envelope_volume": "High - 5,000+ clients, 87 offices, every engagement requires signed documents"
+    },
+    "use_cases": [
+      {
+        "department": "All Practice Areas",
+        "use_case": "Convention d'honoraires (Fee agreements)",
+        "volume": "Very High - Every new client engagement",
+        "priority": "P1 - Quick Win"
+      },
+      {
+        "department": "Corporate / M&A",
+        "use_case": "Closing documents, share purchase agreements, shareholders agreements",
+        "volume": "High - Complex multi-party signatures",
+        "priority": "P1 - High Value"
+      },
+      {
+        "department": "Tax",
+        "use_case": "Tax advisory engagement letters, compliance documents, CIR documentation",
+        "volume": "High - 250 tax lawyers",
+        "priority": "P2"
+      },
+      {
+        "department": "Labor/Employment",
+        "use_case": "Employment contracts, amendments, termination agreements, non-compete clauses",
+        "volume": "High",
+        "priority": "P1 - Easy automation"
+      },
+      {
+        "department": "Real Estate",
+        "use_case": "Lease agreements, sale contracts, environmental clauses",
+        "volume": "Medium - 30 dedicated lawyers",
+        "priority": "P2"
+      },
+      {
+        "department": "HR (Internal)",
+        "use_case": "Internal employment contracts for 2,300 employees, NDA, onboarding",
+        "volume": "Medium",
+        "priority": "P1 - Internal champion potential"
+      },
+      {
+        "department": "International",
+        "use_case": "Cross-border agreements via WTS Global / Unyer network",
+        "volume": "Medium",
+        "priority": "P2 - Differentiator for DocuSign vs local competitors"
+      },
+      {
+        "department": "Private Equity",
+        "use_case": "LBO docs, closing ceremonies (100+ documents per deal)",
+        "volume": "High value per transaction",
+        "priority": "P1 - Massive time savings"
+      }
+    ],
+    "competitive_landscape": {
+      "potential_competitors": [
+        {
+          "name": "Yousign",
+          "positioning": "French leader, used by SECIB. Local compliance angle. Lower price point.",
+          "weakness": "Limited international coverage vs DocuSign"
+        },
+        {
+          "name": "Lex-Persona",
+          "positioning": "Free e-signature solution for French lawyers",
+          "weakness": "Limited features, no enterprise capabilities"
+        },
+        {
+          "name": "Cle Avocat (CNB)",
+          "positioning": "Official lawyer e-signature key (162 EUR). Qualified signature level.",
+          "weakness": "Hardware-based, not scalable, poor UX for bulk signing"
+        }
+      ],
+      "docusign_differentiators": [
+        "Already integrated with LexisNexis Lexis PolyOffice (key law firm software)",
+        "Already integrated with Septeo solutions for lawyers",
+        "eIDAS compliant - Simple, Advanced, and Qualified signature levels",
+        "International coverage for cross-border deals (WTS Global / Unyer network)",
+        "Azure-native SaaS aligns with Fidal's cloud-first strategy",
+        "Enterprise-grade security and audit trail (important for CISO Mariotto)",
+        "Proven in French law firms: Scotto & Associes, Linklaters, Pomelaw, etc."
+      ]
+    },
+    "buying_center": {
+      "economic_buyer": "Nathalie Deperrois (DAF/CFO) - Budget authority",
+      "technical_buyer": "Stephane Mariotto (DSI/CIO/CISO) - Technical validation and deployment",
+      "user_buyer": "Regional Directors + Practice Group leaders - Adoption and usage",
+      "champion_targets": [
+        "Aurelie Klein - Digital innovation leader, understands eIDAS",
+        "Jean-Godefroy Desmazieres - Youngest directoire member, tech-forward (speaks at AI Summit)",
+        "Carole Chatelain (DRH) - HR use cases for quick win"
+      ],
+      "executive_sponsors": [
+        "Francois de Laage de Meux - President",
+        "Christophe Mikolajczak - DG"
+      ],
+      "blocker_risks": [
+        "Thierry Schneider (Dir. Juridique) - May require extensive compliance review",
+        "Joel Frey (Pres. Conseil Surveillance) - Governance oversight"
+      ]
+    },
+    "engagement_strategy": {
+      "phase_1_discovery": {
+        "actions": [
+          "Connect with Stephane Mariotto (DSI) - present DocuSign's Azure-native architecture and security posture",
+          "Connect with Aurelie Klein - discuss eIDAS compliance and legal innovation",
+          "Identify current e-signature solution (if any) and pain points"
+        ],
+        "messaging": "Cloud-first, Azure-native e-signature platform. Already trusted by leading French law firms. eIDAS compliant with Simple, Advanced, and Qualified signatures."
+      },
+      "phase_2_value_proof": {
+        "actions": [
+          "Propose pilot with HR department (Carole Chatelain) for employment contracts",
+          "Demo integration with LexisNexis Lexis PolyOffice if Fidal uses it",
+          "Calculate ROI: time savings on fee agreements (convention d'honoraires) across 87 offices",
+          "Reference: Scotto & Associes case study (20 min vs several hours)"
+        ]
+      },
+      "phase_3_expansion": {
+        "actions": [
+          "Expand to M&A / Private Equity closing processes",
+          "International use cases with Unyer / WTS Global network",
+          "API integration with Fidal IA (Sopra Steria Next) for automated document workflows"
+        ]
+      }
+    },
+    "key_events_and_triggers": [
+      {
+        "event": "Fidal IA V2 deployed to 1,250 users (2024)",
+        "implication": "Firm is investing heavily in digital tools. e-Signature is a natural next step."
+      },
+      {
+        "event": "Cloud migration to Azure ongoing",
+        "implication": "DocuSign SaaS fits perfectly into cloud-first strategy. No on-premise concerns."
+      },
+      {
+        "event": "Directoire renewed (2024)",
+        "implication": "New mandate = new strategic priorities. Good time to introduce new enterprise tools."
+      },
+      {
+        "event": "Jean-Godefroy Desmazieres speaking at IA Summit Lille 2026",
+        "implication": "Directoire member publicly engaged with tech/AI. Potential executive sponsor."
+      },
+      {
+        "event": "Unyer international alliance launched",
+        "implication": "Cross-border document signing needs will increase. DocuSign's international compliance is a differentiator."
+      },
+      {
+        "event": "87 offices across France + Overseas",
+        "implication": "Distributed workforce = high need for digital signature to eliminate paper-based processes across locations."
+      }
+    ]
+  },
+
+  "organigram_hierarchy": {
+    "level_0_governance": {
+      "conseil_de_surveillance": {
+        "president": "Joel Frey"
+      }
+    },
+    "level_1_directoire": [
+      {"name": "Francois de Laage de Meux", "role": "President du Directoire"},
+      {"name": "Christophe Mikolajczak", "role": "Directeur General"},
+      {"name": "Jean-Godefroy Desmazieres", "role": "Directeur General Delegue"}
+    ],
+    "level_2_dg_delegue_operations": {
+      "name": "Eric Joanne",
+      "role": "Directeur General Delegue (Operations)",
+      "reports_to": "Directoire"
+    },
+    "level_2_functional_directors": [
+      {"name": "Stephane Mariotto", "role": "DSI / CIO & CISO", "reports_to": "Directoire"},
+      {"name": "Nathalie Deperrois", "role": "DAF (CFO)", "reports_to": "Directoire"},
+      {"name": "Carole Chatelain", "role": "DRH (CHRO)", "reports_to": "Directoire"},
+      {"name": "Hedwige de Villartay", "role": "Dir. Communication", "reports_to": "Directoire"},
+      {"name": "Catherine Le Corre", "role": "Dir. Marketing", "reports_to": "Directoire"},
+      {"name": "Thierry Schneider", "role": "Dir. Juridique Interne", "reports_to": "Directoire"},
+      {"name": "Christine Blaise-Engel", "role": "Resp. International - Legal", "reports_to": "Directoire"},
+      {"name": "Laurent Leclercq", "role": "Resp. International - Tax", "reports_to": "Directoire"},
+      {"name": "Aurelie Klein", "role": "Resp. Innovation Digitale", "reports_to": "Directoire / DSI"}
+    ],
+    "level_3_regional_directors": [
+      {"region": "Paris", "directors": ["Dominique Davodet", "Patrice Graillat"]},
+      {"region": "Rhone-Alpes", "directors": ["Marie du Gardin (adjoint)"]},
+      {"region": "Mediterranee", "directors": ["TBD"]},
+      {"region": "Midi Toulousain", "directors": ["TBD"]},
+      {"region": "Centre", "directors": ["Manuel Ardouin", "Francois Bretonniere (adjoint)"]},
+      {"region": "Val de Loire Ocean", "directors": ["Nicolas Feraud", "Regis Petetin"]},
+      {"region": "Hauts-de-France", "directors": ["Hugues Dubois", "Gregory Olczak-Godefert"]},
+      {"region": "Grand Est", "directors": ["Joel Frey (office dir. Strasbourg)"]},
+      {"region": "Bourgogne-Franche-Comte", "directors": ["Alexandre Bron"]},
+      {"region": "Aquitaine Atlantique", "directors": ["TBD"]},
+      {"region": "Normandie", "directors": ["TBD"]},
+      {"region": "Ouest / Bretagne", "directors": ["TBD"]}
+    ]
+  },
+
+  "knowledge_management_department": {
+    "description": "Unique in the market. Brings together practicing and academic lawyers to support technical excellence, innovation, and client development.",
+    "function": "National KM directors develop technical guidance, provide continuous training, and design innovative solutions. Department directors in regions serve as relay points.",
+    "relevance_to_docusign": "KM department could be a key ally for deploying DocuSign templates, clause libraries, and standardized signing workflows across the firm."
+  },
+
+  "import_mappings": {
+    "salesforce": {
+      "account_name": "Fidal",
+      "account_type": "Prospect",
+      "industry": "Legal Services",
+      "annual_revenue": 283000000,
+      "employees": 2300,
+      "website": "https://www.fidal.com",
+      "billing_country": "France",
+      "billing_city": "Courbevoie",
+      "description": "Largest France-based business law firm. 1,400 lawyers, 87 offices, 12 regional divisions. Cloud-first (Azure), AI-forward (Fidal IA). Key opportunity for enterprise e-signature."
+    },
+    "hubspot": {
+      "company_name": "Fidal",
+      "company_domain": "fidal.com",
+      "industry": "Legal Services",
+      "annual_revenue": 283000000,
+      "number_of_employees": 2300,
+      "country": "France",
+      "city": "Courbevoie",
+      "lifecycle_stage": "opportunity",
+      "lead_status": "New"
+    }
+  }
+}
