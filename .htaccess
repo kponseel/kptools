@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# Forcer HTTPS (décommenter si nécessaire sur OVH)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Ne pas réécrire les fichiers et dossiers existants
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rediriger tout slug vers index.php
+RewriteRule ^([a-zA-Z0-9_-]+)$ index.php?slug=$1 [L,QSA]
