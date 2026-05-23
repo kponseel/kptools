@@ -57,6 +57,7 @@
   .surprise .dice{font-size:19px;}
 
   .controls{display:flex;align-items:center;gap:8px;padding:13px 16px 2px;}
+  .controls.tight{padding-top:8px;}
   .controls select{flex:1;min-width:0;background:var(--bg2);color:var(--txt);border:1px solid var(--border);
     border-radius:10px;padding:9px 8px;font-size:13px;outline:none;}
   .viewtg{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;flex:0 0 auto;}
@@ -69,7 +70,8 @@
   /* ---- Grille ---- */
   .results.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(106px,1fr));gap:11px;padding:8px 14px 0;}
   .tile{position:relative;aspect-ratio:2/3;border-radius:13px;overflow:hidden;cursor:pointer;border:none;padding:0;
-    background:var(--g);box-shadow:0 4px 14px -6px rgba(0,0,0,.6);text-align:left;color:#fff;}
+    background:var(--g);box-shadow:0 4px 14px -6px rgba(0,0,0,.6);text-align:left;color:#fff;
+    content-visibility:auto;contain-intrinsic-size:120px 180px;}
   .tile .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
     font-size:46px;font-weight:900;color:rgba(255,255,255,.13);letter-spacing:-2px;}
   .tile .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.15) 48%,transparent 70%);}
@@ -86,7 +88,8 @@
 
   /* ---- Liste ---- */
   .results.list{display:flex;flex-direction:column;gap:10px;padding:8px 14px 0;}
-  .card{display:flex;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;}
+  .card{display:flex;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;
+    content-visibility:auto;contain-intrinsic-size:auto 104px;}
   .card .mini{flex:0 0 56px;width:56px;height:84px;border-radius:9px;background:var(--g);position:relative;overflow:hidden;
     display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:rgba(255,255,255,.85);}
   .card .info{flex:1;min-width:0;display:flex;flex-direction:column;}
@@ -229,6 +232,17 @@
       <button class="chip" data-type="serie" aria-pressed="false">Séries</button>
       <button class="chip fav" id="favToggle" aria-pressed="false">❤️ Ma liste</button>
     </div>
+    <div class="chips" id="moodChips">
+      <button class="chip" data-mood="all" aria-pressed="true">✨ Toutes envies</button>
+      <button class="chip" data-mood="frissons" aria-pressed="false">😱 Frissons</button>
+      <button class="chip" data-mood="rire" aria-pressed="false">😂 Rire</button>
+      <button class="chip" data-mood="action" aria-pressed="false">💥 Action</button>
+      <button class="chip" data-mood="emotion" aria-pressed="false">😢 Émotion</button>
+      <button class="chip" data-mood="romance" aria-pressed="false">❤️ Romance</button>
+      <button class="chip" data-mood="famille" aria-pressed="false">👨‍👩‍👧 Famille</button>
+      <button class="chip" data-mood="cerveau" aria-pressed="false">🧠 Cerveau</button>
+      <button class="chip" data-mood="evasion" aria-pressed="false">🌍 Évasion</button>
+    </div>
   </header>
 
   <div class="bigactions">
@@ -238,23 +252,32 @@
 
   <div class="controls">
     <select id="genre"><option value="all">Tous les genres</option></select>
+    <div class="viewtg" id="viewtg">
+      <button data-view="grid" aria-pressed="true" title="Grille">▦</button>
+      <button data-view="list" aria-pressed="false" title="Liste">☰</button>
+    </div>
+  </div>
+  <div class="controls tight">
+    <select id="minr">
+      <option value="0">Toutes notes</option>
+      <option value="7">★ 7+</option>
+      <option value="7.5">★ 7,5+</option>
+      <option value="8">★ 8+</option>
+      <option value="8.5">★ 8,5+</option>
+    </select>
     <select id="sort">
       <option value="rating">Note ↓</option>
       <option value="year">Plus récent</option>
       <option value="title">A → Z</option>
     </select>
-    <div class="viewtg" id="viewtg">
-      <button data-view="grid" aria-pressed="true" title="Grille">▦</button>
-      <button data-view="list" aria-pressed="false" title="Liste">☰</button>
-    </div>
   </div>
 
   <div class="count" id="count"></div>
   <main class="results grid" id="results"></main>
 
   <footer>
-    Disponibilités indicatives (France) et susceptibles d'évoluer selon les catalogues.<br>
-    Notes inspirées des évaluations publiques · 100 titres par plateforme · Données détachées (<code>data.js</code>).
+    Catalogue live via TMDB / JustWatch (région France) avec une clé ⚙️, sinon sélection curée.<br>
+    Disponibilités et notes indicatives, susceptibles d'évoluer selon les catalogues.
   </footer>
 
   <!-- Roulette -->
@@ -292,8 +315,21 @@
   function toggleFav(t){ favs.has(t)?favs.delete(t):favs.add(t); try{localStorage.setItem(FAVKEY,JSON.stringify([...favs]));}catch(e){} updateFavChip(); }
   function updateFavChip(){ $('favToggle').textContent = favs.size ? `❤️ Ma liste (${favs.size})` : "❤️ Ma liste"; }
 
-  const state={q:"",plat:"all",type:"all",genre:"all",sort:"rating",view:"grid",favOnly:false};
+  const state={q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,sort:"rating",view:"grid",favOnly:false};
   let filtered=[];
+
+  /* humeurs -> ensembles de genres (couvre le vocabulaire TMDB live ET la sélection curée) */
+  const MOODS={
+    frissons:["Horreur","Thriller","Mystère","Survie"],
+    rire:["Comédie","Comédie musicale"],
+    action:["Action","Aventure","Action & Adventure","Crime","Policier","Braquage","Guerre","Guerre & Politique","Super-héros"],
+    emotion:["Drame","Biopic"],
+    romance:["Romance"],
+    famille:["Famille","Familial","Animation","Enfants"],
+    cerveau:["Documentaire","Historique","Histoire","SF","Science-Fiction","Sci-Fi & Fantasy","Mystère"],
+    evasion:["Aventure","Fantastique","Fantasy","SF","Science-Fiction","Sci-Fi & Fantasy","Action & Adventure","Western","Super-héros"]
+  };
+  const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
   const esc = s => s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -370,10 +406,14 @@
 
   function computeFiltered(){
     const q=norm(state.q.trim());
+    const moodSet = state.mood!=="all" ? new Set(MOODS[state.mood]||[]) : null;
     filtered = DATA.filter(m=>{
       if(state.plat!=="all" && m.plat!==state.plat) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
-      if(state.genre!=="all" && !m.genre.split(" · ").includes(state.genre)) return false;
+      if(state.minRating && m.rating < state.minRating) return false;
+      const gs = m.genre.split(" · ");
+      if(state.genre!=="all" && !gs.includes(state.genre)) return false;
+      if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
       if(state.favOnly && !isFav(m.t)) return false;
       if(q && !(norm(m.t).includes(q)||norm(m.genre).includes(q))) return false;
       return true;
@@ -434,9 +474,17 @@
     state[key]=b.dataset[key];box.querySelectorAll('.chip').forEach(c=>{if(c.dataset[key])c.setAttribute('aria-pressed',c===b?'true':'false');});render();});}
   wireChips('platChips','plat'); wireChips('typeChips','type');
 
+  function pressMood(){ $('moodChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.mood===state.mood?'true':'false')); }
+  $('moodChips').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b)return;
+    state.mood=b.dataset.mood;
+    if(state.mood!=="all"){ state.genre="all"; $('genre').value="all"; }   // humeur et genre précis s'excluent
+    pressMood(); render();
+  });
+
   $('favToggle').addEventListener('click',()=>{state.favOnly=!state.favOnly;$('favToggle').setAttribute('aria-pressed',state.favOnly?'true':'false');render();});
-  $('q').addEventListener('input',e=>{state.q=e.target.value;render();});
-  $('genre').addEventListener('change',e=>{state.genre=e.target.value;render();});
+  $('q').addEventListener('input',debounce(()=>{state.q=$('q').value;render();},130));
+  $('genre').addEventListener('change',e=>{state.genre=e.target.value; if(state.genre!=="all"){ state.mood="all"; pressMood(); } render();});
+  $('minr').addEventListener('change',e=>{state.minRating=+e.target.value;render();});
   $('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
   $('viewtg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.view=b.dataset.view;
     $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
