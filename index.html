@@ -3,145 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b0b10">
-<title>Top 100 Streaming FR</title>
+<meta name="theme-color" content="#0a0a12">
+<title>On regarde quoi ?</title>
 <style>
   :root{
-    --bg:#0b0b10;
-    --bg-elev:#15151d;
-    --bg-elev2:#1d1d28;
-    --txt:#f4f4f7;
-    --txt-dim:#a0a0b0;
-    --border:#2a2a38;
-    --accent:#7c5cff;
-    --netflix:#e50914;
-    --prime:#00a8e1;
-    --disney:#1f6cff;
-    --gold:#ffc83d;
-    --safe-top:env(safe-area-inset-top,0px);
-    --safe-bottom:env(safe-area-inset-bottom,0px);
+    --bg:#0a0a12; --bg2:#13131e; --bg3:#1c1c2b;
+    --txt:#f5f5fa; --dim:#9b9bb0; --border:#2a2a3c;
+    --accent:#7c5cff; --accent2:#ff4d8d; --gold:#ffc83d;
+    --netflix:#e50914; --prime:#00a8e1; --disney:#1f6cff;
+    --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--bg);
-    color:var(--txt);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.4;
-    -webkit-font-smoothing:antialiased;
-    padding-bottom:calc(24px + var(--safe-bottom));
+    background:radial-gradient(120% 60% at 50% -10%, #1a1430 0%, var(--bg) 55%);
+    color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.4;-webkit-font-smoothing:antialiased;min-height:100vh;
+    padding-bottom:calc(28px + var(--sb));
   }
+  button{font-family:inherit;}
 
-  /* ---- Header ---- */
-  header{
-    position:sticky;top:0;z-index:30;
-    background:rgba(11,11,16,.82);
-    backdrop-filter:saturate(160%) blur(14px);
-    -webkit-backdrop-filter:saturate(160%) blur(14px);
-    border-bottom:1px solid var(--border);
-    padding:calc(12px + var(--safe-top)) 16px 10px;
-  }
-  .brand{display:flex;align-items:baseline;gap:8px;}
-  .brand h1{font-size:20px;font-weight:800;letter-spacing:-.4px;margin:0;}
-  .brand .badge100{
-    font-size:11px;font-weight:800;color:#0b0b10;background:var(--gold);
-    padding:2px 7px;border-radius:999px;
-  }
-  .brand p{margin:2px 0 0;font-size:12px;color:var(--txt-dim);}
+  header{padding:calc(14px + var(--st)) 16px 6px;}
+  .brand{display:flex;align-items:center;gap:9px;}
+  .brand h1{font-size:23px;font-weight:900;letter-spacing:-.5px;margin:0;
+    background:linear-gradient(90deg,#fff,#c9b8ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .brand .emo{font-size:22px;}
+  .brand p{margin:3px 0 0;font-size:12.5px;color:var(--dim);}
+  .brand .stat{margin:2px 0 0;font-size:11px;color:var(--dim);opacity:.8;}
 
-  /* ---- Search ---- */
-  .search{position:relative;margin-top:12px;}
-  .search input{
-    width:100%;border:1px solid var(--border);background:var(--bg-elev);
-    color:var(--txt);font-size:16px;border-radius:12px;
-    padding:11px 12px 11px 38px;outline:none;
-  }
-  .search input::placeholder{color:var(--txt-dim);}
+  .search{position:relative;margin-top:13px;}
+  .search input{width:100%;border:1px solid var(--border);background:var(--bg2);color:var(--txt);
+    font-size:16px;border-radius:13px;padding:12px 12px 12px 40px;outline:none;}
+  .search input::placeholder{color:var(--dim);}
   .search input:focus{border-color:var(--accent);}
-  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:var(--txt-dim);}
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;fill:var(--dim);}
 
-  /* ---- Chips ---- */
-  .chips{
-    display:flex;gap:8px;overflow-x:auto;padding:12px 0 2px;
-    scrollbar-width:none;-ms-overflow-style:none;
-  }
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:11px 0 1px;scrollbar-width:none;}
   .chips::-webkit-scrollbar{display:none;}
-  .chip{
-    flex:0 0 auto;border:1px solid var(--border);background:var(--bg-elev);
-    color:var(--txt-dim);font-size:13px;font-weight:600;
-    padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;
-    transition:.15s;
-  }
-  .chip[aria-pressed="true"]{background:var(--txt);color:#0b0b10;border-color:var(--txt);}
+  .chip{flex:0 0 auto;border:1px solid var(--border);background:var(--bg2);color:var(--dim);
+    font-size:13px;font-weight:600;padding:7px 13px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:.15s;}
+  .chip[aria-pressed="true"]{background:var(--txt);color:#0a0a12;border-color:var(--txt);}
   .chip[data-plat="netflix"][aria-pressed="true"]{background:var(--netflix);border-color:var(--netflix);color:#fff;}
   .chip[data-plat="prime"][aria-pressed="true"]{background:var(--prime);border-color:var(--prime);color:#04222e;}
   .chip[data-plat="disney"][aria-pressed="true"]{background:var(--disney);border-color:var(--disney);color:#fff;}
+  .chip.fav[aria-pressed="true"]{background:var(--accent2);border-color:var(--accent2);color:#fff;}
 
-  /* ---- Toolbar (count + sort) ---- */
-  .toolbar{
-    display:flex;align-items:center;justify-content:space-between;
-    gap:10px;padding:14px 16px 4px;
-  }
-  .count{font-size:13px;color:var(--txt-dim);}
+  .bigactions{display:flex;gap:10px;margin:13px 16px 0;}
+  .surprise,.swipebtn{flex:1;border:none;cursor:pointer;color:#fff;font-size:15px;font-weight:800;
+    padding:14px 10px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .08s;}
+  .surprise{background:linear-gradient(100deg,var(--accent),var(--accent2));box-shadow:0 8px 22px -10px rgba(124,92,255,.8);}
+  .swipebtn{background:linear-gradient(100deg,#ff7a45,var(--accent2));box-shadow:0 8px 22px -10px rgba(255,77,141,.8);}
+  .surprise:active,.swipebtn:active{transform:scale(.97);}
+  .surprise .dice{font-size:19px;}
+
+  .controls{display:flex;align-items:center;gap:8px;padding:13px 16px 2px;}
+  .controls select{flex:1;min-width:0;background:var(--bg2);color:var(--txt);border:1px solid var(--border);
+    border-radius:10px;padding:9px 8px;font-size:13px;outline:none;}
+  .viewtg{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden;flex:0 0 auto;}
+  .viewtg button{background:var(--bg2);border:none;color:var(--dim);padding:9px 12px;cursor:pointer;font-size:16px;line-height:1;}
+  .viewtg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
+
+  .count{padding:12px 16px 2px;font-size:12.5px;color:var(--dim);}
   .count b{color:var(--txt);}
-  .sort{display:flex;align-items:center;gap:6px;}
-  .sort label{font-size:12px;color:var(--txt-dim);}
-  .sort select{
-    background:var(--bg-elev);color:var(--txt);border:1px solid var(--border);
-    border-radius:9px;padding:6px 8px;font-size:13px;outline:none;
-  }
 
-  /* ---- List ---- */
-  .list{padding:8px 12px 0;display:flex;flex-direction:column;gap:10px;}
-  .card{
-    display:flex;gap:12px;background:var(--bg-elev);border:1px solid var(--border);
-    border-radius:14px;padding:10px;align-items:stretch;
-  }
-  .poster{
-    position:relative;flex:0 0 64px;width:64px;height:96px;border-radius:9px;
-    overflow:hidden;display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:22px;color:rgba(255,255,255,.9);
-    text-shadow:0 1px 6px rgba(0,0,0,.4);
-  }
-  .poster .rank{
-    position:absolute;top:0;left:0;background:rgba(0,0,0,.55);
-    color:#fff;font-size:11px;font-weight:800;padding:2px 6px;border-bottom-right-radius:8px;
-  }
-  .info{flex:1;min-width:0;display:flex;flex-direction:column;}
-  .titleline{display:flex;align-items:flex-start;gap:8px;}
-  .titleline h2{font-size:15px;font-weight:700;margin:0;line-height:1.25;}
-  .rating{
-    flex:0 0 auto;margin-left:auto;display:inline-flex;align-items:center;gap:3px;
-    background:var(--bg-elev2);border:1px solid var(--border);border-radius:8px;
-    padding:3px 7px;font-size:13px;font-weight:800;color:var(--gold);
-  }
-  .rating .max{color:var(--txt-dim);font-weight:600;font-size:11px;}
-  .meta{margin-top:5px;font-size:12px;color:var(--txt-dim);}
-  .meta .dot{margin:0 6px;opacity:.5;}
-  .tags{margin-top:auto;padding-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-  .pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid var(--border);color:var(--txt-dim);}
-  .pill.type{background:var(--bg-elev2);}
+  /* ---- Grille ---- */
+  .results.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(106px,1fr));gap:11px;padding:8px 14px 0;}
+  .tile{position:relative;aspect-ratio:2/3;border-radius:13px;overflow:hidden;cursor:pointer;border:none;padding:0;
+    background:var(--g);box-shadow:0 4px 14px -6px rgba(0,0,0,.6);text-align:left;color:#fff;}
+  .tile .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:46px;font-weight:900;color:rgba(255,255,255,.13);letter-spacing:-2px;}
+  .tile .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.82) 0%,rgba(0,0,0,.15) 48%,transparent 70%);}
+  .tile .cap{position:absolute;left:8px;right:8px;bottom:8px;}
+  .tile .ct{font-size:12.5px;font-weight:800;line-height:1.18;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+  .tile .cm{font-size:10.5px;color:#d8d8e6;margin-top:2px;}
+  .badge-rate{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);
+    color:var(--gold);font-size:11.5px;font-weight:800;padding:3px 6px;border-radius:8px;}
+  .pdot{position:absolute;top:9px;left:9px;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.35);}
+  .pdot.netflix{background:var(--netflix);} .pdot.prime{background:var(--prime);} .pdot.disney{background:var(--disney);}
+  .tile .fav{position:absolute;bottom:8px;right:8px;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(0,0,0,.5);backdrop-filter:blur(3px);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1;}
+  .tile .fav.on{color:var(--accent2);}
+
+  /* ---- Liste ---- */
+  .results.list{display:flex;flex-direction:column;gap:10px;padding:8px 14px 0;}
+  .card{display:flex;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:10px;cursor:pointer;}
+  .card .mini{flex:0 0 56px;width:56px;height:84px;border-radius:9px;background:var(--g);position:relative;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:rgba(255,255,255,.85);}
+  .card .info{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .card .tl{display:flex;gap:8px;align-items:flex-start;}
+  .card .tl h2{font-size:15px;font-weight:700;margin:0;line-height:1.25;}
+  .card .rt{margin-left:auto;flex:0 0 auto;background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+    padding:3px 7px;font-size:13px;font-weight:800;color:var(--gold);white-space:nowrap;}
+  .card .meta{margin-top:5px;font-size:12px;color:var(--dim);}
+  .card .tags{margin-top:auto;padding-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;border:1px solid var(--border);color:var(--dim);}
   .pill.plat{color:#fff;border:none;}
-  .pill.plat.netflix{background:var(--netflix);}
-  .pill.plat.prime{background:var(--prime);color:#04222e;}
-  .pill.plat.disney{background:var(--disney);}
+  .pill.plat.netflix{background:var(--netflix);} .pill.plat.prime{background:var(--prime);color:#04222e;} .pill.plat.disney{background:var(--disney);}
+  .card .heart{margin-left:auto;background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;line-height:1;align-self:center;}
+  .card .heart.on{color:var(--accent2);}
 
-  .empty{text-align:center;color:var(--txt-dim);padding:48px 24px;font-size:14px;}
+  .empty{text-align:center;color:var(--dim);padding:46px 24px;font-size:14px;}
 
-  footer{
-    margin-top:22px;padding:0 18px;text-align:center;
-    font-size:11px;color:var(--txt-dim);line-height:1.5;
-  }
-  footer a{color:var(--txt-dim);}
+  /* ---- Overlays ---- */
+  .ov{position:fixed;inset:0;z-index:50;display:none;}
+  .ov.show{display:block;}
+  .ov .back{position:absolute;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(2px);}
+
+  /* roulette */
+  #roul .box{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,420px);
+    background:var(--bg2);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:0 20px 60px -12px #000;}
+  .rhead{height:148px;background:var(--g);position:relative;display:flex;align-items:center;justify-content:center;}
+  .rhead .wm{font-size:62px;font-weight:900;color:rgba(255,255,255,.18);}
+  .rhead .rrate{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);color:var(--gold);font-weight:800;font-size:14px;padding:4px 9px;border-radius:9px;}
+  .rbody{padding:15px 16px 16px;}
+  .rkicker{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);}
+  .rbody h3{margin:5px 0 4px;font-size:20px;font-weight:800;line-height:1.2;}
+  .rmeta{font-size:13px;color:var(--dim);margin-bottom:6px;}
+  .rtags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .ractions{display:flex;gap:9px;}
+  .ractions button{flex:1;border:none;cursor:pointer;font-weight:800;font-size:14px;padding:12px;border-radius:12px;}
+  .btn-replay{background:var(--bg3);color:var(--txt);border:1px solid var(--border)!important;}
+  .btn-ok{background:linear-gradient(100deg,var(--accent),var(--accent2));color:#fff;}
+  .spinning .ractions{opacity:.35;pointer-events:none;}
+
+  /* bottom sheet détail */
+  #sheet .box{position:absolute;left:0;right:0;bottom:0;background:var(--bg2);border-top-left-radius:22px;border-top-right-radius:22px;
+    padding-bottom:calc(16px + var(--sb));transform:translateY(0);box-shadow:0 -10px 40px -10px #000;}
+  .shead{height:140px;background:var(--g);position:relative;display:flex;align-items:center;justify-content:center;border-top-left-radius:22px;border-top-right-radius:22px;}
+  .shead .wm{font-size:60px;font-weight:900;color:rgba(255,255,255,.18);}
+  .grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.5);}
+  .sbody{padding:15px 18px 4px;}
+  .sbody h3{margin:0 0 5px;font-size:21px;font-weight:800;}
+  .sbody .smeta{color:var(--dim);font-size:13.5px;margin-bottom:10px;}
+  .srow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .sactions{display:flex;gap:9px;padding:0 18px;}
+  .sactions button{flex:1;border:none;cursor:pointer;font-weight:800;font-size:14px;padding:12px;border-radius:12px;}
+
+  /* ---- Mode Swipe (Tinder) ---- */
+  .ov.full{background:var(--bg);}
+  .ov.full .box{position:absolute;inset:0;display:flex;flex-direction:column;padding:calc(12px + var(--st)) 16px calc(14px + var(--sb));}
+  .swtop{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .swtop h2{font-size:18px;font-weight:800;margin:0;flex:1;}
+  .swtop .close{background:var(--bg2);border:1px solid var(--border);color:var(--txt);border-radius:50%;width:34px;height:34px;font-size:18px;cursor:pointer;line-height:1;}
+  /* setup */
+  .setup{overflow-y:auto;}
+  .setup .lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px;}
+  .setup .chips{flex-wrap:wrap;overflow:visible;padding:0;}
+  .setup select{width:100%;background:var(--bg2);color:var(--txt);border:1px solid var(--border);border-radius:11px;padding:11px;font-size:15px;outline:none;}
+  .setup .start{margin-top:24px;width:100%;border:none;cursor:pointer;color:#fff;font-size:16px;font-weight:800;padding:15px;border-radius:14px;
+    background:linear-gradient(100deg,#ff7a45,var(--accent2));}
+  .setup .start:disabled{opacity:.5;}
+  .setup .hint{margin-top:10px;text-align:center;font-size:12.5px;color:var(--dim);}
+  /* deck */
+  .deck{position:relative;flex:1;margin:4px 0 14px;touch-action:none;}
+  .swcard{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:var(--g);
+    box-shadow:0 18px 40px -16px rgba(0,0,0,.8);will-change:transform;}
+  .swcard .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 6%,rgba(0,0,0,.2) 46%,transparent 66%);}
+  .swcard .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:96px;font-weight:900;color:rgba(255,255,255,.14);}
+  .swcard .top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .swcard .rate{background:rgba(0,0,0,.6);color:var(--gold);font-weight:800;font-size:15px;padding:5px 10px;border-radius:10px;}
+  .swcard .cap{position:absolute;left:16px;right:16px;bottom:16px;}
+  .swcard .cap h3{margin:0 0 6px;font-size:26px;font-weight:900;line-height:1.1;text-shadow:0 2px 8px rgba(0,0,0,.6);}
+  .swcard .cap .m{font-size:13.5px;color:#e0e0ee;margin-bottom:9px;}
+  .swcard .cap .tg{display:flex;gap:6px;flex-wrap:wrap;}
+  .stamp{position:absolute;top:26px;font-size:30px;font-weight:900;letter-spacing:1px;padding:6px 14px;border:4px solid;border-radius:12px;opacity:0;transform:rotate(-16deg);}
+  .stamp.like{left:18px;color:#22e06b;border-color:#22e06b;}
+  .stamp.nope{right:18px;color:#ff4d6a;border-color:#ff4d6a;transform:rotate(16deg);}
+  .swcontrols{display:flex;align-items:center;justify-content:center;gap:18px;}
+  .swbtn{border:none;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--bg2);box-shadow:0 6px 16px -8px #000;border:1px solid var(--border);}
+  .swbtn.nope{width:62px;height:62px;font-size:26px;color:#ff4d6a;}
+  .swbtn.like{width:62px;height:62px;font-size:26px;color:#22e06b;}
+  .swbtn.undo{width:48px;height:48px;font-size:19px;color:var(--gold);}
+  .swbtn.info{width:48px;height:48px;font-size:18px;color:var(--prime);}
+  .swbtn:active{transform:scale(.92);}
+  .swbtn:disabled{opacity:.35;}
+  .swend{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;}
+  .swend .big{font-size:54px;margin-bottom:6px;}
+  .swend h3{font-size:22px;font-weight:800;margin:0 0 6px;}
+  .swend p{color:var(--dim);font-size:14px;margin:0 0 20px;}
+  .swend button{border:none;cursor:pointer;font-weight:800;font-size:15px;padding:13px 18px;border-radius:13px;margin:5px;}
+  .swend .primary{background:linear-gradient(100deg,var(--accent),var(--accent2));color:#fff;}
+  .swend .ghost{background:var(--bg2);color:var(--txt);border:1px solid var(--border);}
+
+  footer{margin-top:24px;padding:0 20px;text-align:center;font-size:11px;color:var(--dim);line-height:1.55;}
 </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <h1>Top Streaming FR</h1>
-      <span class="badge100">TOP 100</span>
+      <span class="emo">🍿</span>
+      <div>
+        <h1>On regarde quoi ?</h1>
+      </div>
     </div>
-    <p>Films &amp; séries les mieux notés sur Netflix, Prime Video et Disney+ (France)</p>
+    <p>Les mieux notés sur Netflix, Prime Video &amp; Disney+ (France)</p>
+    <p class="stat" id="stat"></p>
 
     <div class="search">
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
@@ -149,7 +206,7 @@
     </div>
 
     <div class="chips" id="platChips">
-      <button class="chip" data-plat="all" aria-pressed="true">Toutes les plateformes</button>
+      <button class="chip" data-plat="all" aria-pressed="true">Toutes</button>
       <button class="chip" data-plat="netflix" aria-pressed="false">Netflix</button>
       <button class="chip" data-plat="prime" aria-pressed="false">Prime Video</button>
       <button class="chip" data-plat="disney" aria-pressed="false">Disney+</button>
@@ -158,224 +215,380 @@
       <button class="chip" data-type="all" aria-pressed="true">Tout</button>
       <button class="chip" data-type="film" aria-pressed="false">Films</button>
       <button class="chip" data-type="serie" aria-pressed="false">Séries</button>
+      <button class="chip fav" id="favToggle" aria-pressed="false">❤️ Ma liste</button>
     </div>
   </header>
 
-  <div class="toolbar">
-    <span class="count" id="count"></span>
-    <div class="sort">
-      <label for="sort">Trier</label>
-      <select id="sort">
-        <option value="rank">Classement</option>
-        <option value="rating">Note ↓</option>
-        <option value="year">Plus récent</option>
-        <option value="title">A → Z</option>
-      </select>
+  <div class="bigactions">
+    <button class="surprise" id="surprise"><span class="dice">🎲</span> Surprends-moi</button>
+    <button class="swipebtn" id="swipeBtn">💘 Mode Swipe</button>
+  </div>
+
+  <div class="controls">
+    <select id="genre"><option value="all">Tous les genres</option></select>
+    <select id="sort">
+      <option value="rating">Note ↓</option>
+      <option value="year">Plus récent</option>
+      <option value="title">A → Z</option>
+    </select>
+    <div class="viewtg" id="viewtg">
+      <button data-view="grid" aria-pressed="true" title="Grille">▦</button>
+      <button data-view="list" aria-pressed="false" title="Liste">☰</button>
     </div>
   </div>
 
-  <main class="list" id="list"></main>
+  <div class="count" id="count"></div>
+  <main class="results grid" id="results"></main>
 
   <footer>
-    Disponibilités indicatives pour la France et susceptibles d'évoluer selon les catalogues.<br>
-    Notes inspirées des évaluations publiques · Données intégrées hors-ligne.
+    Disponibilités indicatives (France) et susceptibles d'évoluer selon les catalogues.<br>
+    Notes inspirées des évaluations publiques · 100 titres par plateforme · Données détachées (<code>data.js</code>).
   </footer>
 
+  <!-- Roulette -->
+  <div class="ov" id="roul">
+    <div class="back" data-close></div>
+    <div class="box" id="roulBox"></div>
+  </div>
+  <!-- Détail -->
+  <div class="ov" id="sheet">
+    <div class="back" data-close></div>
+    <div class="box" id="sheetBox"></div>
+  </div>
+  <!-- Mode Swipe -->
+  <div class="ov full" id="swipe">
+    <div class="box" id="swipeBox"></div>
+  </div>
+
+<script src="data.js"></script>
 <script>
-/* ---------- Données curées (100 titres) ---------- */
-/* plat: netflix | prime | disney  ·  type: film | serie  ·  rating /10 */
-const DATA = [
-  {t:"Breaking Bad", plat:"netflix", type:"serie", rating:9.5, year:2008, genre:"Crime · Drame"},
-  {t:"Le Parrain", plat:"prime", type:"film", rating:9.2, year:1972, genre:"Crime · Drame"},
-  {t:"Better Call Saul", plat:"netflix", type:"serie", rating:9.0, year:2015, genre:"Crime · Drame"},
-  {t:"Arcane", plat:"netflix", type:"serie", rating:9.0, year:2021, genre:"Animation · SF"},
-  {t:"The Last Dance", plat:"netflix", type:"serie", rating:9.0, year:2020, genre:"Documentaire"},
-  {t:"Pulp Fiction", plat:"prime", type:"film", rating:8.9, year:1994, genre:"Crime · Drame"},
-  {t:"When They See Us", plat:"netflix", type:"serie", rating:8.9, year:2019, genre:"Drame"},
-  {t:"Forrest Gump", plat:"prime", type:"film", rating:8.8, year:1994, genre:"Drame · Romance"},
-  {t:"Inception", plat:"prime", type:"film", rating:8.8, year:2010, genre:"SF · Thriller"},
-  {t:"Peaky Blinders", plat:"netflix", type:"serie", rating:8.8, year:2013, genre:"Crime · Drame"},
-  {t:"BoJack Horseman", plat:"netflix", type:"serie", rating:8.8, year:2014, genre:"Animation · Comédie"},
-  {t:"Narcos", plat:"netflix", type:"serie", rating:8.8, year:2015, genre:"Crime · Biopic"},
-  {t:"It's Always Sunny in Philadelphia", plat:"disney", type:"serie", rating:8.8, year:2005, genre:"Comédie"},
-  {t:"L'Empire contre-attaque", plat:"disney", type:"film", rating:8.7, year:1980, genre:"SF · Aventure"},
-  {t:"The Mandalorian", plat:"disney", type:"serie", rating:8.7, year:2019, genre:"SF · Aventure"},
-  {t:"Les Simpson", plat:"disney", type:"serie", rating:8.7, year:1989, genre:"Animation · Comédie"},
-  {t:"The Boys", plat:"prime", type:"serie", rating:8.7, year:2019, genre:"Super-héros · Action"},
-  {t:"Fleabag", plat:"prime", type:"serie", rating:8.7, year:2016, genre:"Comédie · Drame"},
-  {t:"The Marvelous Mrs. Maisel", plat:"prime", type:"serie", rating:8.7, year:2017, genre:"Comédie · Drame"},
-  {t:"Invincible", plat:"prime", type:"serie", rating:8.7, year:2021, genre:"Animation · Super-héros"},
-  {t:"Interstellar", plat:"prime", type:"film", rating:8.7, year:2014, genre:"SF · Aventure"},
-  {t:"Dark", plat:"netflix", type:"serie", rating:8.7, year:2017, genre:"SF · Thriller"},
-  {t:"Stranger Things", plat:"netflix", type:"serie", rating:8.7, year:2016, genre:"SF · Horreur"},
-  {t:"Black Mirror", plat:"netflix", type:"serie", rating:8.7, year:2011, genre:"SF · Anthologie"},
-  {t:"Un nouvel espoir", plat:"disney", type:"film", rating:8.6, year:1977, genre:"SF · Aventure"},
-  {t:"Atlanta", plat:"disney", type:"serie", rating:8.6, year:2016, genre:"Comédie · Drame"},
-  {t:"Aux frontières du réel (X-Files)", plat:"disney", type:"serie", rating:8.6, year:1993, genre:"SF · Mystère"},
-  {t:"Le Crown", plat:"netflix", type:"serie", rating:8.6, year:2016, genre:"Drame historique"},
-  {t:"Mindhunter", plat:"netflix", type:"serie", rating:8.6, year:2017, genre:"Crime · Thriller"},
-  {t:"The Haunting of Hill House", plat:"netflix", type:"serie", rating:8.6, year:2018, genre:"Horreur · Drame"},
-  {t:"Le Silence des agneaux", plat:"prime", type:"film", rating:8.6, year:1991, genre:"Thriller · Crime"},
-  {t:"Le Roi Lion", plat:"disney", type:"film", rating:8.5, year:1994, genre:"Animation · Famille"},
-  {t:"Alien, le huitième passager", plat:"disney", type:"film", rating:8.5, year:1979, genre:"Horreur · SF"},
-  {t:"Gladiator", plat:"prime", type:"film", rating:8.5, year:2000, genre:"Action · Historique"},
-  {t:"Whiplash", plat:"prime", type:"film", rating:8.5, year:2014, genre:"Drame · Musique"},
-  {t:"Mr. Robot", plat:"prime", type:"serie", rating:8.5, year:2015, genre:"Thriller · Drame"},
-  {t:"Bosch", plat:"prime", type:"serie", rating:8.5, year:2014, genre:"Policier · Crime"},
-  {t:"Le Jeu de la dame", plat:"netflix", type:"serie", rating:8.5, year:2020, genre:"Drame"},
-  {t:"Ozark", plat:"netflix", type:"serie", rating:8.5, year:2017, genre:"Crime · Thriller"},
-  {t:"24 heures chrono", plat:"disney", type:"serie", rating:8.4, year:2001, genre:"Action · Thriller"},
-  {t:"Coco", plat:"disney", type:"film", rating:8.4, year:2017, genre:"Animation · Famille"},
-  {t:"WALL-E", plat:"disney", type:"film", rating:8.4, year:2008, genre:"Animation · SF"},
-  {t:"Avengers: Endgame", plat:"disney", type:"film", rating:8.4, year:2019, genre:"Super-héros · Action"},
-  {t:"Avengers: Infinity War", plat:"disney", type:"film", rating:8.4, year:2018, genre:"Super-héros · Action"},
-  {t:"Spider-Man: New Generation", plat:"disney", type:"film", rating:8.4, year:2018, genre:"Animation · Super-héros"},
-  {t:"Andor", plat:"disney", type:"serie", rating:8.4, year:2022, genre:"SF · Drame"},
-  {t:"Joker", plat:"prime", type:"film", rating:8.4, year:2019, genre:"Drame · Thriller"},
-  {t:"Love, Death & Robots", plat:"netflix", type:"serie", rating:8.4, year:2019, genre:"Animation · SF"},
-  {t:"Là-haut", plat:"disney", type:"film", rating:8.3, year:2009, genre:"Animation · Aventure"},
-  {t:"Toy Story 3", plat:"disney", type:"film", rating:8.3, year:2010, genre:"Animation · Famille"},
-  {t:"Les Disparus (Lost)", plat:"disney", type:"serie", rating:8.3, year:2004, genre:"Drame · Mystère"},
-  {t:"Prison Break", plat:"disney", type:"serie", rating:8.3, year:2005, genre:"Action · Thriller"},
-  {t:"Le Loup de Wall Street", plat:"prime", type:"film", rating:8.2, year:2013, genre:"Biopic · Comédie"},
-  {t:"Le Monde de Nemo", plat:"disney", type:"film", rating:8.2, year:2003, genre:"Animation · Famille"},
-  {t:"Piège de cristal (Die Hard)", plat:"disney", type:"film", rating:8.2, year:1988, genre:"Action · Thriller"},
-  {t:"Loki", plat:"disney", type:"serie", rating:8.2, year:2021, genre:"SF · Aventure"},
-  {t:"La Casa de Papel", plat:"netflix", type:"serie", rating:8.2, year:2017, genre:"Braquage · Thriller"},
-  {t:"Sense8", plat:"netflix", type:"serie", rating:8.2, year:2015, genre:"SF · Drame"},
-  {t:"Klaus", plat:"netflix", type:"film", rating:8.1, year:2019, genre:"Animation · Famille"},
-  {t:"Vice-versa", plat:"disney", type:"film", rating:8.1, year:2015, genre:"Animation · Famille"},
-  {t:"Ratatouille", plat:"disney", type:"film", rating:8.1, year:2007, genre:"Animation · Comédie"},
-  {t:"Only Murders in the Building", plat:"disney", type:"serie", rating:8.1, year:2021, genre:"Comédie · Policier"},
-  {t:"Reacher", plat:"prime", type:"serie", rating:8.1, year:2022, genre:"Action · Thriller"},
-  {t:"Mad Max: Fury Road", plat:"prime", type:"film", rating:8.1, year:2015, genre:"Action · SF"},
-  {t:"Mercredi", plat:"netflix", type:"serie", rating:8.1, year:2022, genre:"Comédie · Fantastique"},
-  {t:"Les Indestructibles", plat:"disney", type:"film", rating:8.0, year:2004, genre:"Animation · Action"},
-  {t:"Soul", plat:"disney", type:"film", rating:8.0, year:2020, genre:"Animation · Famille"},
-  {t:"Thor: Ragnarok", plat:"disney", type:"film", rating:7.9, year:2017, genre:"Super-héros · Comédie"},
-  {t:"La La Land", plat:"prime", type:"film", rating:8.0, year:2016, genre:"Comédie musicale · Romance"},
-  {t:"Le Discours d'un roi", plat:"prime", type:"film", rating:8.0, year:2010, genre:"Drame · Historique"},
-  {t:"Blade Runner 2049", plat:"prime", type:"film", rating:8.0, year:2017, genre:"SF · Drame"},
-  {t:"Jack Ryan", plat:"prime", type:"serie", rating:8.0, year:2018, genre:"Action · Thriller"},
-  {t:"Squid Game", plat:"netflix", type:"serie", rating:8.0, year:2021, genre:"Thriller · Drame"},
-  {t:"The Witcher", plat:"netflix", type:"serie", rating:8.0, year:2019, genre:"Fantastique · Aventure"},
-  {t:"Unorthodox", plat:"netflix", type:"serie", rating:8.0, year:2020, genre:"Drame"},
-  {t:"WandaVision", plat:"disney", type:"serie", rating:7.9, year:2021, genre:"Super-héros · Mystère"},
-  {t:"Avatar", plat:"disney", type:"film", rating:7.9, year:2009, genre:"SF · Aventure"},
-  {t:"Titanic", plat:"disney", type:"film", rating:7.9, year:1997, genre:"Romance · Drame"},
-  {t:"Upload", plat:"prime", type:"serie", rating:7.9, year:2020, genre:"Comédie · SF"},
-  {t:"Marriage Story", plat:"netflix", type:"film", rating:7.9, year:2019, genre:"Drame"},
-  {t:"The Irishman", plat:"netflix", type:"film", rating:7.8, year:2019, genre:"Crime · Drame"},
-  {t:"À l'Ouest, rien de nouveau", plat:"netflix", type:"film", rating:7.8, year:2022, genre:"Guerre · Drame"},
-  {t:"Le Cercle des neiges", plat:"netflix", type:"film", rating:7.8, year:2023, genre:"Drame · Survie"},
-  {t:"Manchester by the Sea", plat:"prime", type:"film", rating:7.8, year:2016, genre:"Drame"},
-  {t:"Everything Everywhere All at Once", plat:"prime", type:"film", rating:7.8, year:2022, genre:"SF · Aventure"},
-  {t:"The Bear", plat:"disney", type:"serie", rating:8.6, year:2022, genre:"Comédie · Drame"},
-  {t:"Roma", plat:"netflix", type:"film", rating:7.7, year:2018, genre:"Drame"},
-  {t:"Les Sept de Chicago", plat:"netflix", type:"film", rating:7.7, year:2020, genre:"Drame · Historique"},
-  {t:"Maniac", plat:"netflix", type:"serie", rating:7.7, year:2018, genre:"SF · Drame"},
-  {t:"Sound of Metal", plat:"prime", type:"film", rating:7.7, year:2019, genre:"Drame · Musique"},
-  {t:"Kingsman: Services secrets", plat:"disney", type:"film", rating:7.7, year:2014, genre:"Action · Comédie"},
-  {t:"The Big Sick", plat:"prime", type:"film", rating:7.5, year:2017, genre:"Comédie · Romance"},
-  {t:"Lupin", plat:"netflix", type:"serie", rating:7.5, year:2021, genre:"Policier · Aventure"},
-  {t:"Okja", plat:"netflix", type:"film", rating:7.3, year:2017, genre:"Aventure · SF"},
-  {t:"La Forme de l'eau", plat:"disney", type:"film", rating:7.3, year:2017, genre:"Drame · Fantastique"},
-  {t:"Black Panther", plat:"disney", type:"film", rating:7.3, year:2018, genre:"Super-héros · Action"},
-  {t:"Hunters", plat:"prime", type:"serie", rating:7.2, year:2020, genre:"Thriller · Drame"},
-  {t:"La Roue du Temps", plat:"prime", type:"serie", rating:7.1, year:2021, genre:"Fantastique"},
-  {t:"Les Anneaux de Pouvoir", plat:"prime", type:"serie", rating:6.9, year:2022, genre:"Fantastique · Aventure"},
-  {t:"The Power of the Dog", plat:"netflix", type:"film", rating:6.8, year:2021, genre:"Drame · Western"}
-];
+(function(){
+  const DATA = (window.DATA||[]).slice();
+  if(!DATA.length){ document.getElementById('results').innerHTML='<div class="empty">Base de données introuvable (data.js non chargé).</div>'; return; }
 
-const PLAT = {
-  netflix:{name:"Netflix", g:"linear-gradient(135deg,#7a0008,#e50914)"},
-  prime:{name:"Prime Video", g:"linear-gradient(135deg,#013a4d,#00a8e1)"},
-  disney:{name:"Disney+", g:"linear-gradient(135deg,#0a1c4d,#1f6cff)"}
-};
+  const PLAT = {netflix:"Netflix", prime:"Prime Video", disney:"Disney+"};
+  const FAVKEY = "orq_fav_v1";
 
-/* Classement global figé selon la note (puis l'année) */
-const RANKED = [...DATA].sort((a,b)=> b.rating-a.rating || b.year-a.year || a.t.localeCompare(b.t,'fr'));
-RANKED.forEach((m,i)=> m.rank = i+1);
+  const $ = id => document.getElementById(id);
+  const resultsEl=$('results'), countEl=$('count');
 
-const state = { q:"", plat:"all", type:"all", sort:"rank" };
+  /* favoris (localStorage) */
+  let favs = new Set();
+  try{ favs = new Set(JSON.parse(localStorage.getItem(FAVKEY)||"[]")); }catch(e){}
+  const isFav = t => favs.has(t);
+  function toggleFav(t){ favs.has(t)?favs.delete(t):favs.add(t); try{localStorage.setItem(FAVKEY,JSON.stringify([...favs]));}catch(e){} updateFavChip(); }
+  function updateFavChip(){ $('favToggle').textContent = favs.size ? `❤️ Ma liste (${favs.size})` : "❤️ Ma liste"; }
 
-const el = id => document.getElementById(id);
-const listEl = el("list"), countEl = el("count");
+  const state={q:"",plat:"all",type:"all",genre:"all",sort:"rating",view:"grid",favOnly:false};
+  let filtered=[];
 
-function initials(title){
-  const clean = title.replace(/[^\p{L}\p{N} ]/gu,"").trim();
-  const parts = clean.split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0]||"") + (parts[1]?.[0]||"")).toUpperCase() || "?";
-}
+  const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const esc = s => s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  function initials(t){const p=t.replace(/[^\p{L}\p{N} ]/gu,"").trim().split(/\s+/).filter(Boolean);return ((p[0]?.[0]||"")+(p[1]?.[0]||"")).toUpperCase()||"?";}
+  function hueOf(t){let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))%360;return h;}
+  function grad(t){const h=hueOf(t);return `linear-gradient(150deg,hsl(${h} 58% 34%),hsl(${(h+50)%360} 62% 17%))`;}
+  const typeLabel = m => m.type==="film"?"Film":"Série";
 
-function norm(s){ return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,""); }
+  /* genres dynamiques */
+  const genres=[...new Set(DATA.flatMap(m=>m.genre.split(" · ")))].sort((a,b)=>a.localeCompare(b,'fr'));
+  $('genre').insertAdjacentHTML('beforeend', genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join(""));
 
-function apply(){
-  const q = norm(state.q.trim());
-  let rows = RANKED.filter(m=>{
-    if(state.plat!=="all" && m.plat!==state.plat) return false;
-    if(state.type!=="all" && m.type!==state.type) return false;
-    if(q && !(norm(m.t).includes(q) || norm(m.genre).includes(q))) return false;
-    return true;
-  });
+  $('stat').textContent = `${DATA.length} titres · 100 par plateforme`;
 
-  if(state.sort==="rating") rows.sort((a,b)=> b.rating-a.rating || a.rank-b.rank);
-  else if(state.sort==="year") rows.sort((a,b)=> b.year-a.year || a.rank-b.rank);
-  else if(state.sort==="title") rows.sort((a,b)=> a.t.localeCompare(b.t,'fr'));
-  else rows.sort((a,b)=> a.rank-b.rank);
-
-  render(rows);
-}
-
-function render(rows){
-  countEl.innerHTML = `<b>${rows.length}</b> titre${rows.length>1?"s":""}`;
-  if(!rows.length){
-    listEl.innerHTML = `<div class="empty">Aucun titre ne correspond à votre recherche.</div>`;
-    return;
+  function computeFiltered(){
+    const q=norm(state.q.trim());
+    filtered = DATA.filter(m=>{
+      if(state.plat!=="all" && m.plat!==state.plat) return false;
+      if(state.type!=="all" && m.type!==state.type) return false;
+      if(state.genre!=="all" && !m.genre.split(" · ").includes(state.genre)) return false;
+      if(state.favOnly && !isFav(m.t)) return false;
+      if(q && !(norm(m.t).includes(q)||norm(m.genre).includes(q))) return false;
+      return true;
+    });
+    if(state.sort==="rating") filtered.sort((a,b)=>b.rating-a.rating||b.year-a.year);
+    else if(state.sort==="year") filtered.sort((a,b)=>b.year-a.year||b.rating-a.rating);
+    else filtered.sort((a,b)=>a.t.localeCompare(b.t,'fr'));
   }
-  listEl.innerHTML = rows.map(m=>{
-    const p = PLAT[m.plat];
-    const typeLabel = m.type==="film" ? "Film" : "Série";
-    return `<article class="card">
-      <div class="poster" style="background:${p.g}">
-        <span class="rank">#${m.rank}</span>
-        ${initials(m.t)}
-      </div>
+
+  function tileHTML(m){
+    return `<article class="tile" data-t="${esc(m.t)}" style="--g:${grad(m.t)}">
+      <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
+      <span class="pdot ${m.plat}"></span>
+      <span class="badge-rate">★ ${m.rating.toFixed(1)}</span>
+      <button class="fav ${isFav(m.t)?'on':''}" data-fav="${esc(m.t)}" aria-label="Ajouter à ma liste">${isFav(m.t)?'♥':'♡'}</button>
+      <span class="cap"><span class="ct">${esc(m.t)}</span><span class="cm">${typeLabel(m)} · ${m.year}</span></span>
+    </article>`;
+  }
+  function cardHTML(m){
+    return `<article class="card" data-t="${esc(m.t)}" style="--g:${grad(m.t)}">
+      <div class="mini">${initials(m.t)}</div>
       <div class="info">
-        <div class="titleline">
-          <h2>${escapeHtml(m.t)}</h2>
-          <span class="rating">★ ${m.rating.toFixed(1)}<span class="max">/10</span></span>
-        </div>
-        <div class="meta">${m.year}<span class="dot">•</span>${escapeHtml(m.genre)}</div>
+        <div class="tl"><h2>${esc(m.t)}</h2><span class="rt">★ ${m.rating.toFixed(1)}</span></div>
+        <div class="meta">${typeLabel(m)} · ${m.year} · ${esc(m.genre)}</div>
         <div class="tags">
-          <span class="pill type">${typeLabel}</span>
-          <span class="pill plat ${m.plat}">${p.name}</span>
+          <span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>
+          <button class="heart ${isFav(m.t)?'on':''}" data-fav="${esc(m.t)}" aria-label="Ajouter à ma liste">${isFav(m.t)?'♥':'♡'}</button>
         </div>
       </div>
     </article>`;
-  }).join("");
-}
+  }
 
-function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function render(){
+    computeFiltered();
+    resultsEl.className = "results "+state.view;
+    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}`;
+    $('surprise').disabled = filtered.length===0;
+    $('surprise').style.opacity = filtered.length===0 ? .5 : 1;
+    if(!filtered.length){ resultsEl.innerHTML='<div class="empty">Aucun titre ne correspond. Élargis tes filtres 🎬</div>'; return; }
+    const fn = state.view==="grid"?tileHTML:cardHTML;
+    resultsEl.innerHTML = filtered.map(fn).join("");
+  }
 
-/* ---- Events ---- */
-el("q").addEventListener("input", e=>{ state.q = e.target.value; apply(); });
-el("sort").addEventListener("change", e=>{ state.sort = e.target.value; apply(); });
-
-function wireChips(containerId, key){
-  const box = el(containerId);
-  box.addEventListener("click", e=>{
-    const btn = e.target.closest(".chip");
-    if(!btn) return;
-    state[key] = btn.dataset[key];
-    box.querySelectorAll(".chip").forEach(c=> c.setAttribute("aria-pressed", c===btn ? "true":"false"));
-    apply();
+  /* ---- interactions liste/grille (délégation) ---- */
+  resultsEl.addEventListener('click', e=>{
+    const favBtn = e.target.closest('[data-fav]');
+    if(favBtn){ e.stopPropagation(); const t=favBtn.dataset.fav; toggleFav(t);
+      const on=isFav(t); favBtn.classList.toggle('on',on); favBtn.textContent=on?'♥':'♡';
+      if(state.favOnly && !on) render(); return; }
+    const item = e.target.closest('[data-t]');
+    if(item) openSheet(byTitle(item.dataset.t));
   });
-}
-wireChips("platChips","plat");
-wireChips("typeChips","type");
+  const byTitle = t => DATA.find(m=>m.t===t);
 
-apply();
+  /* ---- chips ---- */
+  function wireChips(id,key){const box=$(id);box.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b||!b.dataset[key])return;
+    state[key]=b.dataset[key];box.querySelectorAll('.chip').forEach(c=>{if(c.dataset[key])c.setAttribute('aria-pressed',c===b?'true':'false');});render();});}
+  wireChips('platChips','plat'); wireChips('typeChips','type');
+
+  $('favToggle').addEventListener('click',()=>{state.favOnly=!state.favOnly;$('favToggle').setAttribute('aria-pressed',state.favOnly?'true':'false');render();});
+  $('q').addEventListener('input',e=>{state.q=e.target.value;render();});
+  $('genre').addEventListener('change',e=>{state.genre=e.target.value;render();});
+  $('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
+  $('viewtg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.view=b.dataset.view;
+    $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
+
+  /* ---- overlays helpers ---- */
+  function openOv(id){$(id).classList.add('show');}
+  function closeOv(id){$(id).classList.remove('show');}
+  document.querySelectorAll('.ov .back[data-close]').forEach(b=>b.addEventListener('click',e=>closeOv(e.target.closest('.ov').id)));
+
+  /* ---- détail (bottom sheet) ---- */
+  function openSheet(m){
+    if(!m)return;
+    $('sheetBox').innerHTML = `
+      <div class="shead" style="--g:${grad(m.t)}"><span class="grab"></span><span class="wm">${initials(m.t)}</span></div>
+      <div class="sbody">
+        <h3>${esc(m.t)}</h3>
+        <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${typeLabel(m)} · ${m.year}</div>
+        <div class="srow">
+          <span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>
+          ${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}
+        </div>
+      </div>
+      <div class="sactions">
+        <button class="btn-replay" id="sFav">${isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter'}</button>
+        <button class="btn-ok" id="sAgain">🎲 Autre idée</button>
+      </div>`;
+    $('sFav').onclick=()=>{toggleFav(m.t);$('sFav').textContent=isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter';
+      const card=resultsEl.querySelector(`[data-fav="${cssEsc(m.t)}"]`); if(card){const on=isFav(m.t);card.classList.toggle('on',on);card.textContent=on?'♥':'♡';}};
+    $('sAgain').onclick=()=>{const pool=filtered.length?filtered:DATA;openSheet(pool[Math.floor(Math.random()*pool.length)]);};
+    openOv('sheet');
+  }
+  const cssEsc = s => (window.CSS&&CSS.escape)?CSS.escape(s):s.replace(/["\\]/g,"\\$&");
+
+  /* ---- roulette ---- */
+  function rouletteCard(m,spinning){
+    return `<div class="${spinning?'spinning':''}">
+      <div class="rhead" style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span><span class="rrate">★ ${m.rating.toFixed(1)}</span></div>
+      <div class="rbody">
+        <div class="rkicker">${spinning?'On tire au sort…':'Ce soir, vous regardez'}</div>
+        <h3>${esc(m.t)}</h3>
+        <div class="rmeta">${typeLabel(m)} · ${m.year}</div>
+        <div class="rtags"><span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}</div>
+        <div class="ractions">
+          <button class="btn-replay" id="rReplay">🎲 Rejouer</button>
+          <button class="btn-ok" id="rOk">Parfait 🍿</button>
+        </div>
+      </div></div>`;
+  }
+  function spin(){
+    const pool=filtered.slice();
+    if(!pool.length)return;
+    openOv('roul');
+    let i=0, n=16, delay=55;
+    (function step(){
+      const m=pool[Math.floor(Math.random()*pool.length)];
+      const last = i>=n;
+      $('roulBox').innerHTML = rouletteCard(m,!last);
+      if(!last){ i++; delay*=1.13; setTimeout(step,delay); }
+      else { $('rReplay').onclick=spin; $('rOk').onclick=()=>closeOv('roul'); }
+    })();
+  }
+  $('surprise').addEventListener('click',spin);
+
+  /* ====================== MODE SWIPE (Tinder) ====================== */
+  const sw = {plat:"all", type:"all", genre:"all", year:0, deck:[], idx:0, history:[]};
+  const YEARS = [[0,"Toutes les années"],[2000,"Après 2000"],[2010,"Après 2010"],[2015,"Après 2015"],[2020,"Après 2020"]];
+
+  function swMatches(){
+    return DATA.filter(m=>{
+      if(sw.plat!=="all" && m.plat!==sw.plat) return false;
+      if(sw.type!=="all" && m.type!==sw.type) return false;
+      if(sw.genre!=="all" && !m.genre.split(" · ").includes(sw.genre)) return false;
+      if(sw.year && m.year < sw.year) return false;
+      return true;
+    });
+  }
+
+  function renderSetup(){
+    const n = swMatches().length;
+    $('swipeBox').innerHTML = `
+      <div class="swtop"><h2>💘 Mode Swipe</h2><button class="close" id="swClose">✕</button></div>
+      <div class="setup">
+        <div class="lbl">Plateforme</div>
+        <div class="chips" id="swPlat">
+          ${[["all","Toutes"],["netflix","Netflix"],["prime","Prime Video"],["disney","Disney+"]].map(([v,l])=>
+            `<button class="chip" data-plat="${v}" data-pl="${v}" aria-pressed="${sw.plat===v}">${l}</button>`).join("")}
+        </div>
+        <div class="lbl">Type</div>
+        <div class="chips" id="swType">
+          ${[["all","Tout"],["film","Films"],["serie","Séries"]].map(([v,l])=>
+            `<button class="chip" data-ty="${v}" aria-pressed="${sw.type===v}">${l}</button>`).join("")}
+        </div>
+        <div class="lbl">Genre</div>
+        <select id="swGenre"><option value="all">Tous les genres</option>${genres.map(g=>`<option value="${esc(g)}" ${sw.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
+        <div class="lbl">Année de sortie</div>
+        <select id="swYear">${YEARS.map(([v,l])=>`<option value="${v}" ${sw.year==v?'selected':''}>${l}</option>`).join("")}</select>
+        <button class="start" id="swStart" ${n?'':'disabled'}>Commencer (${n} titre${n>1?'s':''}) →</button>
+        <div class="hint">Glisse à droite ❤️ pour garder, à gauche ✕ pour passer.</div>
+      </div>`;
+    $('swClose').onclick=()=>closeOv('swipe');
+    $('swPlat').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.plat=b.dataset.pl;renderSetup();};
+    $('swType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.type=b.dataset.ty;renderSetup();};
+    $('swGenre').onchange=e=>{sw.genre=e.target.value;renderSetup();};
+    $('swYear').onchange=e=>{sw.year=+e.target.value;renderSetup();};
+    $('swStart').onclick=startDeck;
+  }
+
+  function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+  function startDeck(){
+    sw.deck = shuffle(swMatches().slice());
+    sw.idx = 0; sw.history = [];
+    renderDeck();
+  }
+
+  function swCardHTML(m){
+    return `<div class="swcard" style="--g:${grad(m.t)}">
+      <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
+      <div class="stamp like">J'AIME</div><div class="stamp nope">PASSER</div>
+      <div class="top"><span class="pill plat ${m.plat}">${PLAT[m.plat]}</span><span class="rate">★ ${m.rating.toFixed(1)}</span></div>
+      <div class="cap">
+        <h3>${esc(m.t)}</h3>
+        <div class="m">${typeLabel(m)} · ${m.year}</div>
+        <div class="tg">${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}</div>
+      </div>
+    </div>`;
+  }
+
+  function renderDeck(){
+    const remaining = sw.deck.length - sw.idx;
+    if(remaining<=0){ renderEnd(); return; }
+    const stack = [];
+    for(let k=Math.min(sw.idx+2, sw.deck.length-1); k>=sw.idx; k--){
+      const scale = 1 - (k-sw.idx)*0.04, ty=(k-sw.idx)*10;
+      stack.push(`<div class="swslot" data-k="${k}" style="position:absolute;inset:0;transform:translateY(${ty}px) scale(${scale});">${swCardHTML(sw.deck[k])}</div>`);
+    }
+    $('swipeBox').innerHTML = `
+      <div class="swtop"><h2>💘 Swipe</h2><button class="close" id="swClose">✕</button></div>
+      <div class="deck" id="deck">${stack.join("")}</div>
+      <div class="swcontrols">
+        <button class="swbtn undo" id="swUndo" ${sw.history.length?'':'disabled'} title="Annuler">↩</button>
+        <button class="swbtn nope" id="swNope" title="Passer">✕</button>
+        <button class="swbtn like" id="swLike" title="J'aime">♥</button>
+      </div>`;
+    $('swClose').onclick=()=>{ closeOv('swipe'); updateFavChip(); };
+    $('swUndo').onclick=undo;
+    $('swNope').onclick=()=>trigger('nope');
+    $('swLike').onclick=()=>trigger('like');
+    attachDrag();
+  }
+
+  let topCard=null, dragging=false, sx=0, sy=0, dx=0, dy=0;
+  function attachDrag(){
+    const deck=$('deck'); if(!deck)return;
+    const slot=deck.querySelector('.swslot:last-child'); if(!slot)return;
+    topCard=slot.querySelector('.swcard'); dx=0; dy=0;
+    slot.style.touchAction="none";
+    slot.addEventListener('pointerdown',onDown);
+  }
+  function onDown(e){ dragging=true; sx=e.clientX; sy=e.clientY; topCard.style.transition='none';
+    try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}
+    e.currentTarget.addEventListener('pointermove',onMove);
+    e.currentTarget.addEventListener('pointerup',onUp);
+    e.currentTarget.addEventListener('pointercancel',onUp);
+  }
+  function onMove(e){ if(!dragging)return; dx=e.clientX-sx; dy=e.clientY-sy;
+    topCard.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    topCard.querySelector('.stamp.like').style.opacity=Math.max(0,Math.min(1,dx/110));
+    topCard.querySelector('.stamp.nope').style.opacity=Math.max(0,Math.min(1,-dx/110));
+  }
+  function onUp(){ if(!dragging)return; dragging=false;
+    if(dx>105) fly('like'); else if(dx<-105) fly('nope');
+    else { topCard.style.transition='transform .25s'; topCard.style.transform='';
+      topCard.querySelector('.stamp.like').style.opacity=0; topCard.querySelector('.stamp.nope').style.opacity=0; }
+  }
+  function trigger(action){ if(!topCard||dragging)return; dy=0; fly(action); }
+  function fly(action){
+    if(!topCard)return;
+    const dir = action==='like'?1:-1;
+    topCard.style.transition='transform .32s ease-out, opacity .32s';
+    topCard.style.transform=`translate(${dir*(window.innerWidth+200)}px,${dy}px) rotate(${dir*22}deg)`;
+    topCard.style.opacity='0';
+    topCard.querySelector('.stamp.'+action).style.opacity=1;
+    topCard=null;
+    setTimeout(()=>decide(action),190);
+  }
+  function decide(action){
+    const m=sw.deck[sw.idx];
+    let added=false;
+    if(action==='like' && !isFav(m.t)){ toggleFav(m.t); added=true; }
+    sw.history.push({action, added});
+    sw.idx++;
+    renderDeck();
+  }
+  function undo(){
+    if(!sw.history.length)return;
+    const last=sw.history.pop(); sw.idx--;
+    if(last.action==='like' && last.added && isFav(sw.deck[sw.idx].t)) toggleFav(sw.deck[sw.idx].t);
+    renderDeck();
+  }
+  function renderEnd(){
+    const likes = sw.history.filter(h=>h.action==='like').length;
+    $('swipeBox').innerHTML = `
+      <div class="swtop"><h2>💘 Swipe</h2><button class="close" id="swClose">✕</button></div>
+      <div class="deck"><div class="swend">
+        <div class="big">${likes?'🍿':'🤷'}</div>
+        <h3>${likes?`${likes} coup${likes>1?'s':''} de cœur !`:'Aucun coup de cœur'}</h3>
+        <p>${likes?'Ajoutés à votre liste d\'envies ❤️':'Réessaie avec d\'autres filtres.'}</p>
+        <div>
+          ${likes?'<button class="primary" id="swSeeList">Voir ma liste ❤️</button>':''}
+          <button class="ghost" id="swRestart">Recommencer</button>
+        </div>
+      </div></div>`;
+    $('swClose').onclick=()=>{ closeOv('swipe'); updateFavChip(); };
+    $('swRestart').onclick=renderSetup;
+    const see=$('swSeeList'); if(see) see.onclick=()=>{
+      closeOv('swipe');
+      state.favOnly=true; $('favToggle').setAttribute('aria-pressed','true');
+      updateFavChip(); render();
+    };
+  }
+  $('swipeBtn').addEventListener('click',()=>{ renderSetup(); openOv('swipe'); });
+
+  updateFavChip();
+  render();
+})();
 </script>
 </body>
 </html>
