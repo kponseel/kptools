@@ -275,7 +275,8 @@
 <script src="data.js"></script>
 <script>
 (function(){
-  const DATA = (window.DATA||[]).slice();
+  let DATA = (window.DATA||[]).slice();
+  const CURATED = (window.DATA||[]).slice();
   if(!DATA.length){ document.getElementById('results').innerHTML='<div class="empty">Base de données introuvable (data.js non chargé).</div>'; return; }
 
   const PLAT = {netflix:"Netflix", prime:"Prime Video", disney:"Disney+"};
@@ -349,18 +350,23 @@
       if(!en.isIntersecting) return;
       const el=en.target; io.unobserve(el); const m=byTitle(el.dataset.t);
       if(m) loadHeadPoster(el,m);
-    });},{rootMargin:"250px"});
-    resultsEl.querySelectorAll('[data-poster]').forEach(el=>{
-      const m=byTitle(el.dataset.t);
-      if(m && posters[m.t]) setPoster(el,posters[m.t]); else io.observe(el);
-    });
+    });},{rootMargin:"300px"});
+    resultsEl.querySelectorAll('[data-poster]').forEach(el=>io.observe(el));
   }
 
-  /* genres dynamiques */
-  const genres=[...new Set(DATA.flatMap(m=>m.genre.split(" · ")))].sort((a,b)=>a.localeCompare(b,'fr'));
-  $('genre').insertAdjacentHTML('beforeend', genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join(""));
+  /* ---- index par identifiant unique (titre peut exister sur 2 plateformes) ---- */
+  let byUid=new Map();
+  const uidOf = m => m.id!=null ? `${m.plat}|${m.type}|${m.id}` : `t|${m.t}`;
+  function reindex(){ byUid=new Map(); DATA.forEach(m=>byUid.set(uidOf(m),m)); }
 
-  $('stat').textContent = `${DATA.length} titres · 100 par plateforme`;
+  /* genres dynamiques (recalculés selon le catalogue chargé) */
+  let genreList=[];
+  function buildGenres(){
+    genreList=[...new Set(DATA.flatMap(m=>m.genre.split(" · ")))].filter(g=>g&&g!=="—").sort((a,b)=>a.localeCompare(b,'fr'));
+    $('genre').innerHTML='<option value="all">Tous les genres</option>'+genreList.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("");
+    if(genreList.includes(state.genre)) $('genre').value=state.genre; else state.genre="all";
+  }
+  const setStatus = t => { $('stat').textContent = t; };
 
   function computeFiltered(){
     const q=norm(state.q.trim());
@@ -378,7 +384,7 @@
   }
 
   function tileHTML(m){
-    return `<article class="tile" data-t="${esc(m.t)}" data-poster style="--g:${grad(m.t)}">
+    return `<article class="tile" data-t="${esc(m.t)}" data-uid="${esc(uidOf(m))}" data-poster style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
       <span class="pdot ${m.plat}"></span>
       <span class="badge-rate">★ ${m.rating.toFixed(1)}</span>
@@ -387,7 +393,7 @@
     </article>`;
   }
   function cardHTML(m){
-    return `<article class="card" data-t="${esc(m.t)}" style="--g:${grad(m.t)}">
+    return `<article class="card" data-t="${esc(m.t)}" data-uid="${esc(uidOf(m))}" style="--g:${grad(m.t)}">
       <div class="mini" data-t="${esc(m.t)}" data-poster><span class="wm">${initials(m.t)}</span></div>
       <div class="info">
         <div class="tl"><h2>${esc(m.t)}</h2><span class="rt">★ ${m.rating.toFixed(1)}</span></div>
@@ -418,8 +424,8 @@
     if(favBtn){ e.stopPropagation(); const t=favBtn.dataset.fav; toggleFav(t);
       const on=isFav(t); favBtn.classList.toggle('on',on); favBtn.textContent=on?'♥':'♡';
       if(state.favOnly && !on) render(); return; }
-    const item = e.target.closest('[data-t]');
-    if(item) openSheet(byTitle(item.dataset.t));
+    const item = e.target.closest('[data-uid]');
+    if(item) openSheet(byUid.get(item.dataset.uid)||byTitle(item.dataset.t));
   });
   const byTitle = t => DATA.find(m=>m.t===t);
 
@@ -434,13 +440,14 @@
   $('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
   $('viewtg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.view=b.dataset.view;
     $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
-  $('gear').addEventListener('click',()=>{
-    const v=prompt("Colle ta clé API TMDB (v3) pour afficher les vraies affiches.\nLaisse le champ vide pour revenir aux vignettes.\n\nClé gratuite sur themoviedb.org → Paramètres → API.", tmdbKey);
+  $('gear').addEventListener('click',async ()=>{
+    const v=prompt("Clé API TMDB (v3) pour le catalogue LIVE FR + affiches réelles.\nLaisse vide pour revenir à la sélection curée.\n\nGratuit : themoviedb.org → Paramètres → API.", tmdbKey);
     if(v===null) return;
     tmdbKey=v.trim();
     try{ tmdbKey?localStorage.setItem(TMDBK,tmdbKey):localStorage.removeItem(TMDBK); }catch(e){}
-    if(!tmdbKey){ posters={}; savePosters(); }
-    render();
+    if(!tmdbKey){ DATA=CURATED.slice(); posters={}; savePosters(); reindex(); buildGenres(); render(); setStatus(`${DATA.length} titres (sélection curée)`); return; }
+    try{ localStorage.removeItem(LIVEKEY); }catch(e){}  // forcer un rafraîchissement
+    await goLive(true);
   });
 
   /* ---- overlays helpers ---- */
@@ -535,7 +542,7 @@
             `<button class="chip" data-ty="${v}" aria-pressed="${sw.type===v}">${l}</button>`).join("")}
         </div>
         <div class="lbl">Genre</div>
-        <select id="swGenre"><option value="all">Tous les genres</option>${genres.map(g=>`<option value="${esc(g)}" ${sw.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
+        <select id="swGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${sw.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
         <div class="lbl">Année de sortie</div>
         <select id="swYear">${YEARS.map(([v,l])=>`<option value="${v}" ${sw.year==v?'selected':''}>${l}</option>`).join("")}</select>
         <button class="start" id="swStart" ${n?'':'disabled'}>Commencer (${n} titre${n>1?'s':''}) →</button>
@@ -666,8 +673,79 @@
   }
   $('swipeBtn').addEventListener('click',()=>{ renderSetup(); openOv('swipe'); });
 
+  /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
+  const PROV = {netflix:"8", prime:"9|119", disney:"337"};   // fournisseurs FR (| = OU ; Prime a 2 ids)
+  const PAGES = 5;                                  // ~100 films + 100 séries / plateforme
+  const LIVEKEY = "orq_live_v1", LIVE_TTL = 24*3600*1000;
+
+  async function tmdb(pathQuery){
+    const sep = pathQuery.includes('?') ? '&' : '?';
+    const r = await fetch(`https://api.themoviedb.org/3${pathQuery}${sep}api_key=${encodeURIComponent(tmdbKey)}`);
+    if(!r.ok) throw new Error("TMDB "+r.status);
+    return r.json();
+  }
+  async function fetchGenres(){
+    const [mv,tv] = await Promise.all([tmdb('/genre/movie/list?language=fr-FR'), tmdb('/genre/tv/list?language=fr-FR')]);
+    const map={}; [...(mv.genres||[]),...(tv.genres||[])].forEach(g=>map[g.id]=g.name); return map;
+  }
+  async function fetchKind(prov, kind){ // kind: 'movie' | 'tv'
+    const votes = kind==='movie' ? 300 : 150;
+    const reqs=[];
+    for(let p=1;p<=PAGES;p++){
+      reqs.push(tmdb(`/discover/${kind}?language=fr-FR&watch_region=FR&with_watch_providers=${prov}&with_watch_monetization_types=flatrate&sort_by=vote_average.desc&vote_count.gte=${votes}&page=${p}`).catch(()=>({results:[]})));
+    }
+    return (await Promise.all(reqs)).flatMap(pg=>pg.results||[]);
+  }
+  function normalize(r, kind, plat, gmap){
+    const title = kind==='movie' ? r.title : r.name;
+    const date  = kind==='movie' ? r.release_date : r.first_air_date;
+    if(!title) return null;
+    const genre = (r.genre_ids||[]).map(id=>gmap[id]).filter(Boolean).slice(0,2).join(" · ") || "—";
+    return { t:title, plat, type: kind==='movie'?'film':'serie',
+      rating: Math.round((r.vote_average||0)*10)/10,
+      year: date ? +date.slice(0,4) : "",
+      genre, id: r.id,
+      poster: r.poster_path ? "https://image.tmdb.org/t/p/w342"+r.poster_path : "" };
+  }
+  async function fetchLiveCatalog(){
+    const gmap = await fetchGenres();
+    const out = [];
+    for(const [plat,prov] of Object.entries(PROV)){
+      const [mv,tv] = await Promise.all([fetchKind(prov,'movie'), fetchKind(prov,'tv')]);
+      [['movie',mv],['tv',tv]].forEach(([kind,arr])=>{
+        const seen=new Set();
+        arr.forEach(r=>{ if(seen.has(r.id))return; seen.add(r.id);
+          const n=normalize(r,kind,plat,gmap); if(n && n.rating>0) out.push(n); });
+      });
+    }
+    return out;
+  }
+  function readCache(){ try{const c=JSON.parse(localStorage.getItem(LIVEKEY)); if(c&&c.items&&c.items.length&&Date.now()-c.ts<LIVE_TTL) return c.items;}catch(e){} return null; }
+  function writeCache(items){ try{localStorage.setItem(LIVEKEY,JSON.stringify({ts:Date.now(),items}));}catch(e){} }
+
+  async function goLive(force){
+    if(!tmdbKey) return false;
+    let items = force ? null : readCache();
+    if(!items){
+      setStatus("⏳ Chargement du catalogue FR (Netflix · Prime · Disney+)…");
+      try{ items = await fetchLiveCatalog(); writeCache(items); }
+      catch(e){ DATA=CURATED.slice(); reindex(); buildGenres(); render(); setStatus("⚠️ Échec TMDB (clé invalide ?) — sélection curée affichée."); return false; }
+    }
+    if(!items.length){ setStatus("Aucun résultat TMDB — sélection curée affichée."); return false; }
+    items.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
+    DATA = items; reindex(); buildGenres(); render();
+    const nf=items.filter(m=>m.plat==='netflix').length, pr=items.filter(m=>m.plat==='prime').length, di=items.filter(m=>m.plat==='disney').length;
+    setStatus(`Catalogue live FR · ${items.length} titres (Netflix ${nf} · Prime ${pr} · Disney+ ${di}) · ⚙️ rafraîchir`);
+    return true;
+  }
+
+  /* ---- init ---- */
+  reindex();
+  buildGenres();
   updateFavChip();
   render();
+  if(tmdbKey){ goLive(false); }
+  else setStatus(`${DATA.length} titres (sélection curée) · ⚙️ ajoute une clé TMDB pour le vrai catalogue live FR`);
 })();
 </script>
 </body>
