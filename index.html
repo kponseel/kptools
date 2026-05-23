@@ -139,6 +139,17 @@
   .sactions{display:flex;gap:9px;padding:0 18px;}
   .sactions button{flex:1;border:none;cursor:pointer;font-weight:800;font-size:14px;padding:12px;border-radius:12px;}
 
+  /* ---- Affiches TMDB (optionnel) ---- */
+  .pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;}
+  .haspim>.pimg{opacity:1;}
+  .haspim>.wm{display:none;}
+  .gear{margin-left:auto;background:var(--bg2);border:1px solid var(--border);color:var(--txt);
+    width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;flex:0 0 auto;}
+  .watchbtn{display:block;text-align:center;text-decoration:none;color:#fff;font-weight:800;font-size:15px;padding:13px;border-radius:12px;}
+  .watchbtn.netflix{background:var(--netflix);}
+  .watchbtn.prime{background:var(--prime);color:#04222e;}
+  .watchbtn.disney{background:var(--disney);}
+
   /* ---- Mode Swipe (Tinder) ---- */
   .ov.full{background:var(--bg);}
   .ov.full .box{position:absolute;inset:0;display:flex;flex-direction:column;padding:calc(12px + var(--st)) 16px calc(14px + var(--sb));}
@@ -196,6 +207,7 @@
       <div>
         <h1>On regarde quoi ?</h1>
       </div>
+      <button id="gear" class="gear" title="Affiches (clé TMDB)" aria-label="Réglages affiches">⚙️</button>
     </div>
     <p>Les mieux notés sur Netflix, Prime Video &amp; Disney+ (France)</p>
     <p class="stat" id="stat"></p>
@@ -289,6 +301,61 @@
   function grad(t){const h=hueOf(t);return `linear-gradient(150deg,hsl(${h} 58% 34%),hsl(${(h+50)%360} 62% 17%))`;}
   const typeLabel = m => m.type==="film"?"Film":"Série";
 
+  /* ---- liens "Regarder sur la plateforme" (recherche, sans clé) ---- */
+  const WATCH = {
+    netflix: t=>`https://www.netflix.com/search?q=${encodeURIComponent(t)}`,
+    prime:   t=>`https://www.primevideo.com/search/?phrase=${encodeURIComponent(t)}`,
+    disney:  t=>`https://www.disneyplus.com/search?q=${encodeURIComponent(t)}`
+  };
+  const watchUrl = m => WATCH[m.plat](m.t);
+  const watchBtn = m => `<a class="watchbtn ${m.plat}" href="${watchUrl(m)}" target="_blank" rel="noopener">▶ Regarder sur ${PLAT[m.plat]}</a>`;
+
+  /* ---- affiches TMDB (optionnel, nécessite une clé gratuite) ---- */
+  const TMDBK="orq_tmdb_key", PCACHE="orq_posters_v1";
+  let tmdbKey=""; try{tmdbKey=localStorage.getItem(TMDBK)||"";}catch(e){}
+  let posters={}; try{posters=JSON.parse(localStorage.getItem(PCACHE)||"{}");}catch(e){}
+  const savePosters=()=>{try{localStorage.setItem(PCACHE,JSON.stringify(posters));}catch(e){}};
+  async function ensurePoster(m){
+    if(!tmdbKey || posters[m.t]!==undefined) return posters[m.t];
+    posters[m.t]=""; // marque "en cours / aucune" pour éviter les requêtes répétées
+    try{
+      const type=m.type==="film"?"movie":"tv";
+      const yk=m.type==="film"?"primary_release_year":"first_air_date_year";
+      const url=`https://api.themoviedb.org/3/search/${type}?api_key=${encodeURIComponent(tmdbKey)}&language=fr-FR&include_adult=false&query=${encodeURIComponent(m.t)}&${yk}=${m.year}`;
+      const j=await (await fetch(url)).json();
+      const hit=(j.results||[]).find(x=>x.poster_path);
+      if(hit){ posters[m.t]="https://image.tmdb.org/t/p/w342"+hit.poster_path; }
+      savePosters();
+    }catch(e){}
+    return posters[m.t];
+  }
+  function setPoster(el,url){
+    if(!url || el.classList.contains('haspim') || el.querySelector(':scope>.pimg')) return;
+    const img=new Image(); img.className='pimg'; img.alt=''; img.decoding='async';
+    img.onload=()=>el.classList.add('haspim');
+    img.onerror=()=>img.remove();
+    img.src=url; el.insertBefore(img, el.firstChild);
+  }
+  function loadHeadPoster(el,m){
+    if(!el||!m) return;
+    if(posters[m.t]) setPoster(el,posters[m.t]);
+    else if(tmdbKey) ensurePoster(m).then(u=>{ if(u) setPoster(el,u); });
+  }
+  let io=null;
+  function setupPosters(){
+    if(io){io.disconnect();io=null;}
+    if(!tmdbKey) return;
+    io=new IntersectionObserver(ents=>{ents.forEach(en=>{
+      if(!en.isIntersecting) return;
+      const el=en.target; io.unobserve(el); const m=byTitle(el.dataset.t);
+      if(m) loadHeadPoster(el,m);
+    });},{rootMargin:"250px"});
+    resultsEl.querySelectorAll('[data-poster]').forEach(el=>{
+      const m=byTitle(el.dataset.t);
+      if(m && posters[m.t]) setPoster(el,posters[m.t]); else io.observe(el);
+    });
+  }
+
   /* genres dynamiques */
   const genres=[...new Set(DATA.flatMap(m=>m.genre.split(" · ")))].sort((a,b)=>a.localeCompare(b,'fr'));
   $('genre').insertAdjacentHTML('beforeend', genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join(""));
@@ -311,7 +378,7 @@
   }
 
   function tileHTML(m){
-    return `<article class="tile" data-t="${esc(m.t)}" style="--g:${grad(m.t)}">
+    return `<article class="tile" data-t="${esc(m.t)}" data-poster style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
       <span class="pdot ${m.plat}"></span>
       <span class="badge-rate">★ ${m.rating.toFixed(1)}</span>
@@ -321,7 +388,7 @@
   }
   function cardHTML(m){
     return `<article class="card" data-t="${esc(m.t)}" style="--g:${grad(m.t)}">
-      <div class="mini">${initials(m.t)}</div>
+      <div class="mini" data-t="${esc(m.t)}" data-poster><span class="wm">${initials(m.t)}</span></div>
       <div class="info">
         <div class="tl"><h2>${esc(m.t)}</h2><span class="rt">★ ${m.rating.toFixed(1)}</span></div>
         <div class="meta">${typeLabel(m)} · ${m.year} · ${esc(m.genre)}</div>
@@ -342,6 +409,7 @@
     if(!filtered.length){ resultsEl.innerHTML='<div class="empty">Aucun titre ne correspond. Élargis tes filtres 🎬</div>'; return; }
     const fn = state.view==="grid"?tileHTML:cardHTML;
     resultsEl.innerHTML = filtered.map(fn).join("");
+    setupPosters();
   }
 
   /* ---- interactions liste/grille (délégation) ---- */
@@ -366,6 +434,14 @@
   $('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
   $('viewtg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.view=b.dataset.view;
     $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
+  $('gear').addEventListener('click',()=>{
+    const v=prompt("Colle ta clé API TMDB (v3) pour afficher les vraies affiches.\nLaisse le champ vide pour revenir aux vignettes.\n\nClé gratuite sur themoviedb.org → Paramètres → API.", tmdbKey);
+    if(v===null) return;
+    tmdbKey=v.trim();
+    try{ tmdbKey?localStorage.setItem(TMDBK,tmdbKey):localStorage.removeItem(TMDBK); }catch(e){}
+    if(!tmdbKey){ posters={}; savePosters(); }
+    render();
+  });
 
   /* ---- overlays helpers ---- */
   function openOv(id){$(id).classList.add('show');}
@@ -384,11 +460,13 @@
           <span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>
           ${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}
         </div>
+        ${watchBtn(m)}
       </div>
       <div class="sactions">
         <button class="btn-replay" id="sFav">${isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter'}</button>
         <button class="btn-ok" id="sAgain">🎲 Autre idée</button>
       </div>`;
+    loadHeadPoster($('sheetBox').querySelector('.shead'), m);
     $('sFav').onclick=()=>{toggleFav(m.t);$('sFav').textContent=isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter';
       const card=resultsEl.querySelector(`[data-fav="${cssEsc(m.t)}"]`); if(card){const on=isFav(m.t);card.classList.toggle('on',on);card.textContent=on?'♥':'♡';}};
     $('sAgain').onclick=()=>{const pool=filtered.length?filtered:DATA;openSheet(pool[Math.floor(Math.random()*pool.length)]);};
@@ -405,6 +483,7 @@
         <h3>${esc(m.t)}</h3>
         <div class="rmeta">${typeLabel(m)} · ${m.year}</div>
         <div class="rtags"><span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}</div>
+        ${spinning?'':`<div style="margin-bottom:12px">${watchBtn(m)}</div>`}
         <div class="ractions">
           <button class="btn-replay" id="rReplay">🎲 Rejouer</button>
           <button class="btn-ok" id="rOk">Parfait 🍿</button>
@@ -421,7 +500,7 @@
       const last = i>=n;
       $('roulBox').innerHTML = rouletteCard(m,!last);
       if(!last){ i++; delay*=1.13; setTimeout(step,delay); }
-      else { $('rReplay').onclick=spin; $('rOk').onclick=()=>closeOv('roul'); }
+      else { $('rReplay').onclick=spin; $('rOk').onclick=()=>closeOv('roul'); loadHeadPoster($('roulBox').querySelector('.rhead'), m); }
     })();
   }
   $('surprise').addEventListener('click',spin);
@@ -511,6 +590,7 @@
     $('swUndo').onclick=undo;
     $('swNope').onclick=()=>trigger('nope');
     $('swLike').onclick=()=>trigger('like');
+    $('deck').querySelectorAll('.swslot').forEach(slot=>loadHeadPoster(slot.querySelector('.swcard'), sw.deck[+slot.dataset.k]));
     attachDrag();
   }
 
