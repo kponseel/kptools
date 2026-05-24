@@ -782,7 +782,7 @@
     const genre = (r.genre_ids||[]).map(id=>gmap[id]).filter(Boolean).slice(0,2).join(" · ") || "—";
     return { t:title, plat, type: kind==='movie'?'film':'serie',
       rating: Math.round((r.vote_average||0)*10)/10,
-      year: date ? +date.slice(0,4) : "",
+      year: date ? +date.slice(0,4) : 0,
       genre, id: r.id,
       poster: r.poster_path ? "https://image.tmdb.org/t/p/w342"+r.poster_path : "" };
   }
