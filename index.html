@@ -13,15 +13,22 @@
     --netflix:#e50914; --prime:#00a8e1; --disney:#1f6cff;
     --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
   }
-  /* ---- Thème Pucinette 🎀 (pour Titia 💕) ---- */
+  /* ---- Thème Pucinette 🎀💕 (rose bonbon, pour Titia) ---- */
   body.pucinette{
-    --bg:#1a0a16; --bg2:#2a0f22; --bg3:#3a1530;
-    --txt:#ffe9f4; --dim:#e3a9cb; --border:#5a2748;
-    --accent:#ff8fc7; --accent2:#ff3d8b; --gold:#ffd36e;
-    background:radial-gradient(130% 70% at 50% -10%, #4a1638 0%, var(--bg) 58%);
+    --bg:#ffd9ee; --bg2:#fff3fb; --bg3:#ffd0ec;
+    --txt:#7a1147; --dim:#c0508f; --border:#ffadd9;
+    --accent:#ff5fb0; --accent2:#ff1f8e; --gold:#e07a00;
+    background:radial-gradient(130% 80% at 50% -8%, #ff9ad2 0%, #ffc1e4 34%, #ffe3f5 100%) fixed;
   }
-  body.pucinette .brand h1{background:linear-gradient(90deg,#fff,#ffb3d9);-webkit-background-clip:text;background-clip:text;}
-  body.pucinette #theme{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;}
+  body.pucinette .brand h1{background:linear-gradient(90deg,#ff1f8e,#9c1059);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  body.pucinette #theme{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;box-shadow:0 4px 14px -5px rgba(255,31,142,.8);}
+  body.pucinette .chip[aria-pressed="true"]{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;}
+  body.pucinette .viewtg button[aria-pressed="true"]{background:linear-gradient(120deg,var(--accent),var(--accent2));}
+  body.pucinette .grab{background:rgba(122,17,71,.32);}
+  body.pucinette .surprise{box-shadow:0 8px 22px -10px rgba(255,31,142,.75);}
+  body.pucinette .swipebtn{background:linear-gradient(100deg,#ff8fc7,var(--accent2));box-shadow:0 8px 22px -10px rgba(255,31,142,.75);}
+  body.pucinette .search input,body.pucinette .controls select,body.pucinette .card,body.pucinette .upd{box-shadow:0 2px 10px -6px rgba(255,31,142,.5);}
+  body.pucinette .pill:not(.plat){border-color:var(--accent);color:var(--accent2);}
 
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -310,7 +317,7 @@
   <footer>
     Catalogue live via TMDB / JustWatch (région France) avec une clé ⚙️, sinon sélection curée.<br>
     Disponibilités et notes indicatives, susceptibles d'évoluer selon les catalogues.
-    <div class="dedicace" id="dedicace" hidden>🎀 Thème Pucinette — pour Titia 💕</div>
+    <div class="dedicace" id="dedicace" hidden>🎀 Thème Pucinette — pour Titia, avec amour 💕</div>
   </footer>
 
   <!-- Roulette -->
@@ -946,6 +953,8 @@
     $('theme').textContent = on ? '🌙' : '🎀';
     $('theme').title = on ? 'Revenir au thème sombre' : 'Thème Pucinette';
     $('dedicace').hidden = !on;
+    const emo=document.querySelector('.brand .emo'); if(emo) emo.textContent = on ? '💖' : '🍿';
+    const mt=document.querySelector('meta[name="theme-color"]'); if(mt) mt.content = on ? '#ff9ad2' : '#0a0a12';
   }
   let theme=''; try{ theme=localStorage.getItem(THKEY)||''; }catch(e){}
   applyTheme(theme);
