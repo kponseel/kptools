@@ -30,6 +30,11 @@
   .brand .emo{font-size:22px;}
   .brand p{margin:3px 0 0;font-size:12.5px;color:var(--dim);}
   .brand .stat{margin:2px 0 0;font-size:11px;color:var(--dim);opacity:.8;}
+  .statrow{display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap;}
+  .statrow .stat{font-size:11px;color:var(--dim);opacity:.85;}
+  .upd{background:var(--bg2);border:1px solid var(--border);color:var(--txt);font-size:11px;font-weight:700;
+    padding:3px 10px;border-radius:999px;cursor:pointer;flex:0 0 auto;}
+  .upd:disabled{opacity:.55;cursor:default;}
 
   .search{position:relative;margin-top:13px;}
   .search input{width:100%;border:1px solid var(--border);background:var(--bg2);color:var(--txt);
@@ -226,7 +231,7 @@
       <button id="gear" class="gear" title="Affiches (clé TMDB)" aria-label="Réglages affiches">⚙️</button>
     </div>
     <p>Les mieux notés sur Netflix, Prime Video &amp; Disney+ (France)</p>
-    <p class="stat" id="stat"></p>
+    <div class="statrow"><span class="stat" id="stat"></span><button class="upd" id="refresh" hidden>↻ Mettre à jour</button></div>
 
     <div class="search">
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
@@ -527,13 +532,14 @@
   $('viewtg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.view=b.dataset.view;
     $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
   $('gear').addEventListener('click',async ()=>{
-    const v=prompt("Clé API TMDB (v3) pour le catalogue LIVE FR + affiches réelles.\nLaisse vide pour revenir à la sélection curée.\n\nGratuit : themoviedb.org → Paramètres → API.", tmdbKey);
+    const old=tmdbKey;
+    const v=prompt("Clé API TMDB (v3) ou jeton (v4) pour le catalogue LIVE FR + affiches réelles.\nLaisse vide pour revenir à la sélection curée.\n\nGratuit : themoviedb.org → Paramètres → API.", tmdbKey);
     if(v===null) return;
     tmdbKey=v.trim();
     try{ tmdbKey?localStorage.setItem(TMDBK,tmdbKey):localStorage.removeItem(TMDBK); }catch(e){}
-    if(!tmdbKey){ DATA=CURATED.slice(); posters={}; savePosters(); reindex(); buildGenres(); render(); setStatus(`${DATA.length} titres (sélection curée)`); return; }
-    try{ localStorage.removeItem(LIVEKEY); }catch(e){}  // forcer un rafraîchissement
-    await goLive(true);
+    if(!tmdbKey){ DATA=CURATED.slice(); posters={}; savePosters(); reindex(); buildGenres(); render(); $('refresh').hidden=true; setStatus(`${DATA.length} titres (sélection curée)`); return; }
+    if(tmdbKey!==old){ try{ localStorage.removeItem(LIVEKEY); }catch(e){} detailCache={}; saveDetail(); await goLive(true); }   // clé changée -> on récupère
+    else { await goLive(false); }   // même clé -> on garde le cache existant
   });
 
   /* ---- overlays helpers ---- */
@@ -561,13 +567,15 @@
   }
   function fmtCert(c){ if(!c) return ""; if(/^(U|TP|G|0|Tous)/i.test(c)) return "Tous publics"; if(/^\d+$/.test(c)) return "-"+c; return c; }
 
-  /* ---- détails enrichis (synopsis, durée, distribution, âge) via TMDB, à l'ouverture ---- */
-  const detailCache={};
+  /* ---- détails enrichis (synopsis, durée, distribution, âge) via TMDB, mis en cache durablement ---- */
+  const DCACHE="orq_detail_v1";
+  let detailCache={}; try{ detailCache=JSON.parse(localStorage.getItem(DCACHE)||"{}"); }catch(e){}
+  const saveDetail=()=>{ try{ localStorage.setItem(DCACHE,JSON.stringify(detailCache)); }catch(e){} };
   async function fetchDetail(m){
     if(!tmdbKey || m.id==null) return null;
     const k=`${m.type}|${m.id}`;
-    if(detailCache[k]!==undefined) return detailCache[k];
-    detailCache[k]=null;
+    if(detailCache[k]!==undefined) return detailCache[k];   // déjà en cache (mémoire ou localStorage)
+    detailCache[k]=null;   // garde anti-doublon le temps de la requête
     try{
       const kind=m.type==="film"?"movie":"tv";
       const extra=kind==="movie"?"credits,release_dates":"credits,content_ratings";
@@ -579,7 +587,8 @@
         : (d.created_by||[]).map(c=>c.name).slice(0,2).join(", ");
       detailCache[k]={ overview:d.overview||"", runtime:rt||0, seasons:kind==="tv"?(d.number_of_seasons||0):0,
         cast, director, cert:extractCert(d,kind) };
-    }catch(e){ detailCache[k]=null; }
+      saveDetail();
+    }catch(e){ delete detailCache[k]; }   // échec : on n'enregistre rien, nouvelle tentative possible
     return detailCache[k];
   }
 
@@ -828,7 +837,16 @@
   /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
   const PROV = {netflix:"8", prime:"9|119", disney:"337"};   // fournisseurs FR (| = OU ; Prime a 2 ids)
   const PAGES = 5;                                  // ~100 films + 100 séries / plateforme
-  const LIVEKEY = "orq_live_v1", LIVE_TTL = 24*3600*1000;
+  const LIVEKEY = "orq_live_v1";
+  let liveTs = 0;
+  function ago(ts){
+    if(!ts) return "";
+    const s=Math.floor((Date.now()-ts)/1000);
+    if(s<60) return "à l'instant";
+    const mn=Math.floor(s/60); if(mn<60) return `il y a ${mn} min`;
+    const h=Math.floor(mn/60); if(h<24) return `il y a ${h} h`;
+    const d=Math.floor(h/24); return `il y a ${d} j`;
+  }
 
   async function tmdb(pathQuery){
     const isV4 = tmdbKey.includes(".");   // jeton v4 (JWT) -> en-tête ; sinon clé v3 -> query
@@ -876,25 +894,34 @@
     })());
     return (await Promise.all(jobs)).flat();
   }
-  function readCache(){ try{const c=JSON.parse(localStorage.getItem(LIVEKEY)); if(c&&c.items&&c.items.length&&Date.now()-c.ts<LIVE_TTL) return c.items;}catch(e){} return null; }
-  function writeCache(items){ try{localStorage.setItem(LIVEKEY,JSON.stringify({ts:Date.now(),items}));}catch(e){} }
+  function readCache(){ try{const c=JSON.parse(localStorage.getItem(LIVEKEY)); if(c&&c.items&&c.items.length){ liveTs=c.ts||0; return c.items; }}catch(e){} return null; }
+  function writeCache(items){ liveTs=Date.now(); try{localStorage.setItem(LIVEKEY,JSON.stringify({ts:liveTs,items}));}catch(e){} }
 
   async function goLive(force){
     if(!tmdbKey) return false;
-    let items = force ? null : readCache();
+    let items = force ? null : readCache();   // cache gardé indéfiniment : aucun appel si déjà présent
     if(!items){
       setStatus("⏳ Chargement du catalogue FR (Netflix · Prime · Disney+)…");
       try{ items = await fetchLiveCatalog(); writeCache(items); }
-      catch(e){ DATA=CURATED.slice(); reindex(); buildGenres(); render(); setStatus("⚠️ Échec TMDB (clé invalide ?) — sélection curée affichée."); return false; }
+      catch(e){ DATA=CURATED.slice(); reindex(); buildGenres(); render(); $('refresh').hidden=true; setStatus("⚠️ Échec TMDB (clé invalide ?) — sélection curée affichée."); return false; }
     }
     if(!items.length){ setStatus("Aucun résultat TMDB — sélection curée affichée."); return false; }
     DATA = mergeCatalog(items);
     DATA.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
     reindex(); buildGenres(); render();
     const cnt=p=>DATA.filter(m=>m.plats.includes(p)).length;
-    setStatus(`Catalogue live FR · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · ⚙️ rafraîchir`);
+    setStatus(`Catalogue live · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · màj ${ago(liveTs)}`);
+    $('refresh').hidden=false;
     return true;
   }
+  $('refresh').addEventListener('click', async ()=>{
+    if(!tmdbKey) return;
+    const btn=$('refresh'); btn.disabled=true;
+    try{ localStorage.removeItem(LIVEKEY); }catch(e){}
+    detailCache={}; saveDetail();            // on rafraîchit aussi les fiches
+    await goLive(true);
+    btn.disabled=false;
+  });
 
   /* ---- init ---- */
   reindex();
