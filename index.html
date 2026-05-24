@@ -89,6 +89,8 @@
   .viewtg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
 
   .count{padding:12px 16px 2px;font-size:12.5px;color:var(--dim);}
+  .clearfav{margin-left:8px;border:1px solid var(--border);background:var(--bg2);color:var(--accent2);
+    font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;cursor:pointer;vertical-align:middle;}
   .count b{color:var(--txt);}
 
   /* ---- Grille ---- */
@@ -514,14 +516,25 @@
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
-    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}`;
+    const clearBtn = (state.favOnly && favs.size) ? ` <button class="clearfav" id="clearFavs">🗑️ Vider ma liste</button>` : "";
+    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}${clearBtn}`;
     $('surprise').disabled = filtered.length===0;
     $('surprise').style.opacity = filtered.length===0 ? .5 : 1;
-    if(!filtered.length){ resultsEl.innerHTML='<div class="empty">Aucun titre ne correspond. Élargis tes filtres 🎬</div>'; return; }
+    if(!filtered.length){
+      const msg = state.favOnly ? "Ta liste est vide. Ajoute des coups de cœur ❤️" : "Aucun titre ne correspond. Élargis tes filtres 🎬";
+      resultsEl.innerHTML=`<div class="empty">${msg}</div>`; return;
+    }
     const fn = state.view==="grid"?tileHTML:cardHTML;
     resultsEl.innerHTML = filtered.map(fn).join("");
     setupPosters();
   }
+  function clearFavs(){
+    if(!favs.size) return;
+    if(!confirm("Vider toute ta liste de favoris ?")) return;
+    favs.clear(); try{localStorage.setItem(FAVKEY,JSON.stringify([]));}catch(e){}
+    updateFavChip(); render();
+  }
+  countEl.addEventListener('click', e=>{ if(e.target.closest('#clearFavs')) clearFavs(); });
 
   /* ---- interactions liste/grille (délégation) ---- */
   resultsEl.addEventListener('click', e=>{
