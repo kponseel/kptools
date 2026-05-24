@@ -141,8 +141,13 @@
   .sheadinfo{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
   .sheadinfo h3{margin:0 0 7px;font-size:20px;font-weight:800;line-height:1.18;}
   .smeta{color:var(--dim);font-size:13.5px;margin-bottom:11px;}
-  .ssyn{padding:4px 18px 0;font-size:14px;line-height:1.5;color:var(--txt);opacity:.93;margin-bottom:14px;}
+  .ssyn{padding:4px 18px 0;font-size:14px;line-height:1.5;color:var(--txt);opacity:.93;margin-bottom:10px;}
   .ssyn.empty{color:var(--dim);font-style:italic;}
+  .pill.cert{background:transparent;border:1px solid var(--dim);color:var(--txt);font-weight:800;}
+  .scredits{padding:0 18px;margin-bottom:14px;display:flex;flex-direction:column;gap:4px;}
+  .scredits:empty{display:none;}
+  .screw{font-size:13.5px;line-height:1.4;color:var(--txt);}
+  .screw span{color:var(--dim);font-weight:700;margin-right:4px;}
   .sbody{padding:4px 18px 4px;}
   .srow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
   .sactions{display:flex;gap:9px;padding:0 18px;}
@@ -541,7 +546,22 @@
   const trailerBtn = m => `<a class="watchbtn yt" href="${ytUrl(m)}" target="_blank" rel="noopener">🎬 Bande-annonce (YouTube)</a>`;
   const fmtRuntime = min => { if(!min) return ''; const h=Math.floor(min/60), r=min%60; return h ? `${h}h${r?String(r).padStart(2,'0'):''}` : `${r}min`; };
 
-  /* ---- détails enrichis (synopsis, durée, saisons) via TMDB, à l'ouverture ---- */
+  /* ---- classification d'âge (FR en priorité, sinon US) ---- */
+  function extractCert(d,kind){
+    try{
+      if(kind==="movie"){
+        const res=(d.release_dates&&d.release_dates.results)||[];
+        const pick=cc=>{const e=res.find(r=>r.iso_3166_1===cc); return e?((e.release_dates||[]).map(x=>x.certification).find(Boolean)||""):"";};
+        return pick("FR")||pick("US")||"";
+      }
+      const res=(d.content_ratings&&d.content_ratings.results)||[];
+      const pick=cc=>{const e=res.find(r=>r.iso_3166_1===cc); return e?e.rating:"";};
+      return pick("FR")||pick("US")||"";
+    }catch(e){ return ""; }
+  }
+  function fmtCert(c){ if(!c) return ""; if(/^(U|TP|G|0|Tous)/i.test(c)) return "Tous publics"; if(/^\d+$/.test(c)) return "-"+c; return c; }
+
+  /* ---- détails enrichis (synopsis, durée, distribution, âge) via TMDB, à l'ouverture ---- */
   const detailCache={};
   async function fetchDetail(m){
     if(!tmdbKey || m.id==null) return null;
@@ -550,9 +570,15 @@
     detailCache[k]=null;
     try{
       const kind=m.type==="film"?"movie":"tv";
-      const d=await tmdb(`/${kind}/${m.id}?language=fr-FR`);
+      const extra=kind==="movie"?"credits,release_dates":"credits,content_ratings";
+      const d=await tmdb(`/${kind}/${m.id}?language=fr-FR&append_to_response=${extra}`);
       const rt=kind==="movie"? d.runtime : (Array.isArray(d.episode_run_time)?d.episode_run_time[0]:0);
-      detailCache[k]={ overview:d.overview||"", runtime:rt||0, seasons:kind==="tv"?(d.number_of_seasons||0):0 };
+      const cast=(((d.credits&&d.credits.cast)||[]).slice(0,4).map(c=>c.name));
+      const director = kind==="movie"
+        ? (((d.credits&&d.credits.crew)||[]).find(c=>c.job==="Director")||{}).name||""
+        : (d.created_by||[]).map(c=>c.name).slice(0,2).join(", ");
+      detailCache[k]={ overview:d.overview||"", runtime:rt||0, seasons:kind==="tv"?(d.number_of_seasons||0):0,
+        cast, director, cert:extractCert(d,kind) };
     }catch(e){ detailCache[k]=null; }
     return detailCache[k];
   }
@@ -570,10 +596,10 @@
         <div class="sheadinfo">
           <h3>${esc(m.t)}</h3>
           <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${metaLine(m)}<span id="sextra"></span></div>
-          <div class="srow">${platPills(m)}</div>
+          <div class="srow">${platPills(m)}<span id="scertwrap"></span></div>
         </div>
       </div>
-      ${live?`<div class="ssyn" id="ssyn">Chargement du résumé…</div>`:''}
+      ${live?`<div class="ssyn" id="ssyn">Chargement du résumé…</div><div class="scredits" id="scredits"></div>`:''}
       <div class="sbody">
         ${genrePills(m)?`<div class="srow">${genrePills(m)}</div>`:''}
         ${trailerBtn(m)}
@@ -590,6 +616,14 @@
       const extra=[]; if(d&&d.runtime) extra.push(fmtRuntime(d.runtime)); if(d&&d.seasons) extra.push(`${d.seasons} saison${d.seasons>1?'s':''}`);
       if(ex&&extra.length) ex.textContent=' · '+extra.join(' · ');
       if(syn){ const t=d&&d.overview; syn.textContent=t||"Pas de résumé disponible en français."; syn.classList.toggle('empty',!t); }
+      const cw=$('scertwrap'); if(cw && d && d.cert) cw.innerHTML=`<span class="pill cert">${esc(fmtCert(d.cert))}</span>`;
+      const cr=$('scredits');
+      if(cr && d){
+        const bits=[];
+        if(d.director) bits.push(`<div class="screw"><span>${m.type==="film"?"De":"Créé par"}</span> ${esc(d.director)}</div>`);
+        if(d.cast&&d.cast.length) bits.push(`<div class="screw"><span>Avec</span> ${esc(d.cast.join(", "))}</div>`);
+        cr.innerHTML=bits.join("");
+      }
     });
     $('sFav').onclick=()=>{toggleFav(m.t);$('sFav').textContent=isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter';
       const on=isFav(m.t);
