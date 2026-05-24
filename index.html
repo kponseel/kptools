@@ -94,6 +94,15 @@
   .viewtg button{background:var(--bg2);border:none;color:var(--dim);padding:9px 12px;cursor:pointer;font-size:16px;line-height:1;}
   .viewtg button[aria-pressed="true"]{background:var(--accent);color:#fff;}
 
+  .toolbar{display:flex;align-items:center;gap:8px;padding:13px 16px 2px;}
+  .filterbtn{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--txt);font-weight:700;font-size:14px;
+    padding:10px 12px;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+  .filterbtn .fb{background:var(--accent);color:#fff;border-radius:999px;min-width:19px;height:19px;padding:0 5px;
+    font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+  .fbar{display:flex;gap:10px;padding:12px 0 calc(2px + var(--sb));position:sticky;bottom:0;background:var(--bg);}
+  .fbar button{flex:1;border:none;cursor:pointer;font-weight:800;font-size:15px;padding:14px;border-radius:13px;}
+  .fbar .primary{background:linear-gradient(100deg,var(--accent),var(--accent2));color:#fff;}
+  .fbar .ghost{background:var(--bg2);color:var(--txt);border:1px solid var(--border);flex:0 0 auto;padding:14px 18px;}
   .count{padding:12px 16px 2px;font-size:12.5px;color:var(--dim);}
   .clearfav{margin-left:8px;border:1px solid var(--border);background:var(--bg2);color:var(--accent2);
     font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;cursor:pointer;vertical-align:middle;}
@@ -266,30 +275,6 @@
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
       <input id="q" type="search" inputmode="search" placeholder="Rechercher un titre, un genre…" aria-label="Rechercher un titre ou un genre" autocomplete="off">
     </div>
-
-    <div class="chips" id="platChips">
-      <button class="chip" data-plat="all" aria-pressed="true">Toutes</button>
-      <button class="chip" data-plat="netflix" aria-pressed="false">Netflix</button>
-      <button class="chip" data-plat="prime" aria-pressed="false">Prime Video</button>
-      <button class="chip" data-plat="disney" aria-pressed="false">Disney+</button>
-    </div>
-    <div class="chips" id="typeChips">
-      <button class="chip" data-type="all" aria-pressed="true">Tout</button>
-      <button class="chip" data-type="film" aria-pressed="false">Films</button>
-      <button class="chip" data-type="serie" aria-pressed="false">Séries</button>
-      <button class="chip fav" id="favToggle" aria-pressed="false">❤️ Ma liste</button>
-    </div>
-    <div class="chips" id="moodChips">
-      <button class="chip" data-mood="all" aria-pressed="true">✨ Toutes envies</button>
-      <button class="chip" data-mood="frissons" aria-pressed="false">😱 Frissons</button>
-      <button class="chip" data-mood="rire" aria-pressed="false">😂 Rire</button>
-      <button class="chip" data-mood="action" aria-pressed="false">💥 Action</button>
-      <button class="chip" data-mood="emotion" aria-pressed="false">😢 Émotion</button>
-      <button class="chip" data-mood="romance" aria-pressed="false">❤️ Romance</button>
-      <button class="chip" data-mood="famille" aria-pressed="false">👨‍👩‍👧 Famille</button>
-      <button class="chip" data-mood="cerveau" aria-pressed="false">🧠 Cerveau</button>
-      <button class="chip" data-mood="evasion" aria-pressed="false">🌍 Évasion</button>
-    </div>
   </header>
 
   <div class="bigactions">
@@ -297,26 +282,13 @@
     <button class="swipebtn" id="swipeBtn">💘 Mode Swipe</button>
   </div>
 
-  <div class="controls">
-    <select id="genre" aria-label="Filtrer par genre"><option value="all">Tous les genres</option></select>
+  <div class="toolbar">
+    <button id="openFilters" class="filterbtn">☰ Filtres</button>
+    <button class="chip fav" id="favToggle" aria-pressed="false">❤️ Ma liste</button>
     <div class="viewtg" id="viewtg">
       <button data-view="grid" aria-pressed="true" title="Grille">▦</button>
       <button data-view="list" aria-pressed="false" title="Liste">☰</button>
     </div>
-  </div>
-  <div class="controls tight">
-    <select id="minr" aria-label="Note minimale">
-      <option value="0">Toutes notes</option>
-      <option value="7">★ 7+</option>
-      <option value="7.5">★ 7,5+</option>
-      <option value="8">★ 8+</option>
-      <option value="8.5">★ 8,5+</option>
-    </select>
-    <select id="sort" aria-label="Trier">
-      <option value="rating">Note ↓</option>
-      <option value="year">Plus récent</option>
-      <option value="title">A → Z</option>
-    </select>
   </div>
 
   <div class="count" id="count"></div>
@@ -342,6 +314,10 @@
   <div class="ov full" id="swipe" role="dialog" aria-modal="true" aria-label="Mode Swipe">
     <div class="box" id="swipeBox"></div>
   </div>
+  <!-- Filtres -->
+  <div class="ov full" id="filters" role="dialog" aria-modal="true" aria-label="Filtres">
+    <div class="box" id="filtersBox"></div>
+  </div>
 
 <script src="data.js"></script>
 <script>
@@ -363,8 +339,10 @@
   function toggleFav(t){ favs.has(t)?favs.delete(t):favs.add(t); try{localStorage.setItem(FAVKEY,JSON.stringify([...favs]));}catch(e){} updateFavChip(); }
   function updateFavChip(){ $('favToggle').textContent = favs.size ? `❤️ Ma liste (${favs.size})` : "❤️ Ma liste"; }
 
-  const state={q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,sort:"rating",view:"grid",favOnly:false};
-  let filtered=[];
+  const state={q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating",view:"grid",favOnly:false};
+  let filtered=[], draft={};
+  const YEARS_MIN=[[0,"Toutes les années"],[2024,"Depuis 2024"],[2023,"Depuis 2023"],[2022,"Depuis 2022"],[2020,"Depuis 2020"],[2015,"Depuis 2015"],[2010,"Depuis 2010"],[2000,"Depuis 2000"]];
+  const RATINGS=[[0,"Toutes notes"],[6,"★ 6+"],[7,"★ 7+"],[7.5,"★ 7,5+"],[8,"★ 8+"],[8.5,"★ 8,5+"],[9,"★ 9+"]];
 
   /* humeurs -> ensembles de genres (couvre le vocabulaire TMDB live ET la sélection curée) */
   const MOODS={
@@ -472,8 +450,7 @@
   let genreList=[];
   function buildGenres(){
     genreList=[...new Set(DATA.flatMap(m=>m.genre.split(" · ")))].filter(g=>g&&g!=="—").sort((a,b)=>a.localeCompare(b,'fr'));
-    $('genre').innerHTML='<option value="all">Tous les genres</option>'+genreList.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("");
-    if(genreList.includes(state.genre)) $('genre').value=state.genre; else state.genre="all";
+    if(!genreList.includes(state.genre)) state.genre="all";   // le genre choisi n'existe plus dans ce catalogue
   }
   const setStatus = t => { $('stat').textContent = t; };
 
@@ -484,6 +461,7 @@
       if(state.plat!=="all" && !m.plats.includes(state.plat)) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.minRating && m.rating < state.minRating) return false;
+      if(state.yearMin && m.year < state.yearMin) return false;
       const gs = m.genre.split(" · ");
       if(state.genre!=="all" && !gs.includes(state.genre)) return false;
       if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
@@ -519,7 +497,7 @@
     </article>`;
   }
 
-  const filtersActive = () => state.q || state.plat!=="all" || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.minRating || state.favOnly;
+  const filtersActive = () => state.q || state.plat!=="all" || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.minRating || state.yearMin || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
@@ -542,13 +520,11 @@
     favs.clear(); try{localStorage.setItem(FAVKEY,JSON.stringify([]));}catch(e){}
     updateFavChip(); render();
   }
-  function pressGroup(id,key,val){ $(id).querySelectorAll('.chip').forEach(c=>{ if(c.dataset[key]) c.setAttribute('aria-pressed', c.dataset[key]===val?'true':'false'); }); }
   function resetFilters(){
-    Object.assign(state,{q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,favOnly:false});
-    $('q').value=""; $('genre').value="all"; $('minr').value="0";
-    pressGroup('platChips','plat','all'); pressGroup('typeChips','type','all'); pressMood();
+    Object.assign(state,{q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,favOnly:false});
+    $('q').value="";
     $('favToggle').setAttribute('aria-pressed','false');
-    render();
+    updateFilterBtn(); render();
   }
   countEl.addEventListener('click', e=>{
     if(e.target.closest('#clearFavs')) clearFavs();
@@ -566,23 +542,73 @@
   });
   const byTitle = t => DATA.find(m=>m.t===t);
 
-  /* ---- chips ---- */
-  function wireChips(id,key){const box=$(id);box.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b||!b.dataset[key])return;
-    state[key]=b.dataset[key];box.querySelectorAll('.chip').forEach(c=>{if(c.dataset[key])c.setAttribute('aria-pressed',c===b?'true':'false');});render();});}
-  wireChips('platChips','plat'); wireChips('typeChips','type');
-
-  function pressMood(){ $('moodChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', c.dataset.mood===state.mood?'true':'false')); }
-  $('moodChips').addEventListener('click',e=>{ const b=e.target.closest('.chip'); if(!b)return;
-    state.mood=b.dataset.mood;
-    if(state.mood!=="all"){ state.genre="all"; $('genre').value="all"; }   // humeur et genre précis s'excluent
-    pressMood(); render();
-  });
-
   $('favToggle').addEventListener('click',()=>{state.favOnly=!state.favOnly;$('favToggle').setAttribute('aria-pressed',state.favOnly?'true':'false');render();});
   $('q').addEventListener('input',debounce(()=>{state.q=$('q').value;render();},130));
-  $('genre').addEventListener('change',e=>{state.genre=e.target.value; if(state.genre!=="all"){ state.mood="all"; pressMood(); } render();});
-  $('minr').addEventListener('change',e=>{state.minRating=+e.target.value;render();});
-  $('sort').addEventListener('change',e=>{state.sort=e.target.value;render();});
+
+  /* ---- panneau de filtres (pré-filtrage + Appliquer) ---- */
+  function countMatches(d){
+    const q=norm(state.q.trim());
+    const moodSet=d.mood!=="all"?new Set(MOODS[d.mood]||[]):null;
+    let n=0;
+    for(const m of DATA){
+      if(d.plat!=="all" && !m.plats.includes(d.plat)) continue;
+      if(d.type!=="all" && m.type!==d.type) continue;
+      if(d.minRating && m.rating<d.minRating) continue;
+      if(d.yearMin && m.year<d.yearMin) continue;
+      const gs=m.genre.split(" · ");
+      if(d.genre!=="all" && !gs.includes(d.genre)) continue;
+      if(moodSet && !gs.some(g=>moodSet.has(g))) continue;
+      if(q && !(norm(m.t).includes(q)||norm(m.genre).includes(q))) continue;
+      n++;
+    }
+    return n;
+  }
+  function updateFilterBtn(){
+    const n=[state.plat!=="all",state.type!=="all",state.genre!=="all",state.mood!=="all",state.minRating>0,state.yearMin>0].filter(Boolean).length;
+    $('openFilters').innerHTML = `☰ Filtres${n?` <span class="fb">${n}</span>`:''}`;
+  }
+  const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
+  function renderFilters(){
+    const chips=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+    $('filtersBox').innerHTML = `
+      <div class="swtop"><h2>☰ Filtres</h2><button class="close" id="fClose">✕</button></div>
+      <div class="setup">
+        <div class="lbl">Type</div>
+        ${chips('fType',[["all","Tout"],["film","Films"],["serie","Séries"]],draft.type)}
+        <div class="lbl">Plateforme</div>
+        ${chips('fPlat',[["all","Toutes"],["netflix","Netflix"],["prime","Prime Video"],["disney","Disney+"]],draft.plat)}
+        <div class="lbl">Humeur</div>
+        ${chips('fMood',[["all","✨ Toutes"],["frissons","😱 Frissons"],["rire","😂 Rire"],["action","💥 Action"],["emotion","😢 Émotion"],["romance","❤️ Romance"],["famille","👨‍👩‍👧 Famille"],["cerveau","🧠 Cerveau"],["evasion","🌍 Évasion"]],draft.mood)}
+        <div class="lbl">Genre</div>
+        <select id="fGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${draft.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
+        <div class="lbl">Année</div>
+        <select id="fYear">${YEARS_MIN.map(([v,l])=>`<option value="${v}" ${draft.yearMin==v?'selected':''}>${l}</option>`).join("")}</select>
+        <div class="lbl">Note minimale</div>
+        <select id="fRating">${RATINGS.map(([v,l])=>`<option value="${v}" ${draft.minRating==v?'selected':''}>${l}</option>`).join("")}</select>
+        <div class="lbl">Trier</div>
+        <select id="fSort">${[["rating","Note ↓"],["year","Plus récent"],["title","A → Z"]].map(([v,l])=>`<option value="${v}" ${draft.sort===v?'selected':''}>${l}</option>`).join("")}</select>
+      </div>
+      <div class="fbar">
+        <button class="ghost" id="fReset">Réinitialiser</button>
+        <button class="primary" id="fApply">Appliquer · ${countMatches(draft)}</button>
+      </div>`;
+    $('fClose').onclick=()=>closeOv('filters');
+    $('fType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.type=b.dataset.v;renderFilters();};
+    $('fPlat').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.plat=b.dataset.v;renderFilters();};
+    $('fMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.mood=b.dataset.v;renderFilters();};
+    $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
+    $('fYear').onchange=e=>{draft.yearMin=+e.target.value;applyCountLabel();};
+    $('fRating').onchange=e=>{draft.minRating=+e.target.value;applyCountLabel();};
+    $('fSort').onchange=e=>{draft.sort=e.target.value;};
+    $('fReset').onclick=()=>{ Object.assign(draft,{plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating"}); renderFilters(); };
+    $('fApply').onclick=()=>{ Object.assign(state,draft); updateFilterBtn(); render(); closeOv('filters'); };
+  }
+  function openFilters(){
+    draft={plat:state.plat,type:state.type,genre:state.genre,mood:state.mood,minRating:state.minRating,yearMin:state.yearMin,sort:state.sort};
+    renderFilters(); openOv('filters');
+  }
+  $('openFilters').addEventListener('click',openFilters);
+
   $('viewtg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;state.view=b.dataset.view;
     $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
   $('gear').addEventListener('click',async ()=>{
@@ -591,7 +617,7 @@
     if(v===null) return;
     tmdbKey=v.trim();
     try{ tmdbKey?localStorage.setItem(TMDBK,tmdbKey):localStorage.removeItem(TMDBK); }catch(e){}
-    if(!tmdbKey){ DATA=CURATED.slice(); posters={}; savePosters(); reindex(); buildGenres(); render(); $('refresh').hidden=true; setStatus(`${DATA.length} titres (sélection curée)`); return; }
+    if(!tmdbKey){ DATA=CURATED.slice(); posters={}; savePosters(); reindex(); buildGenres(); updateFilterBtn(); render(); $('refresh').hidden=true; setStatus(`${DATA.length} titres (sélection curée)`); return; }
     if(tmdbKey!==old){ try{ localStorage.removeItem(LIVEKEY); }catch(e){} detailCache={}; saveDetail(); await goLive(true); }   // clé changée -> on récupère
     else { await goLive(false); }   // même clé -> on garde le cache existant
   });
@@ -963,7 +989,7 @@
     if(!items.length){ setStatus("Aucun résultat TMDB — sélection curée affichée."); return false; }
     DATA = mergeCatalog(items);
     DATA.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
-    reindex(); buildGenres(); render();
+    reindex(); buildGenres(); updateFilterBtn(); render();
     const cnt=p=>DATA.filter(m=>m.plats.includes(p)).length;
     setStatus(`Catalogue live · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · màj ${ago(liveTs)}`);
     $('refresh').hidden=false;
@@ -1001,6 +1027,7 @@
   reindex();
   buildGenres();
   updateFavChip();
+  updateFilterBtn();
   render();
   if(tmdbKey){ goLive(false); }
   else setStatus(`${DATA.length} titres (sélection curée) · ⚙️ ajoute une clé TMDB pour le vrai catalogue live FR`);
