@@ -132,13 +132,18 @@
 
   /* bottom sheet détail */
   #sheet .box{position:absolute;left:0;right:0;bottom:0;background:var(--bg2);border-top-left-radius:22px;border-top-right-radius:22px;
-    padding-bottom:calc(16px + var(--sb));transform:translateY(0);box-shadow:0 -10px 40px -10px #000;}
-  .shead{height:140px;background:var(--g);position:relative;display:flex;align-items:center;justify-content:center;border-top-left-radius:22px;border-top-right-radius:22px;}
-  .shead .wm{font-size:60px;font-weight:900;color:rgba(255,255,255,.18);}
-  .grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.5);}
-  .sbody{padding:15px 18px 4px;}
-  .sbody h3{margin:0 0 5px;font-size:21px;font-weight:800;}
-  .sbody .smeta{color:var(--dim);font-size:13.5px;margin-bottom:10px;}
+    padding-bottom:calc(16px + var(--sb));transform:translateY(0);box-shadow:0 -10px 40px -10px #000;max-height:92vh;overflow-y:auto;}
+  .grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:rgba(255,255,255,.5);z-index:2;}
+  .stop{display:flex;gap:14px;padding:22px 18px 4px;}
+  .sposter{flex:0 0 108px;width:108px;aspect-ratio:2/3;border-radius:12px;overflow:hidden;position:relative;background:var(--g);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px -10px rgba(0,0,0,.75);}
+  .sposter .wm{font-size:36px;font-weight:900;color:rgba(255,255,255,.2);}
+  .sheadinfo{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;}
+  .sheadinfo h3{margin:0 0 7px;font-size:20px;font-weight:800;line-height:1.18;}
+  .smeta{color:var(--dim);font-size:13.5px;margin-bottom:11px;}
+  .ssyn{padding:4px 18px 0;font-size:14px;line-height:1.5;color:var(--txt);opacity:.93;margin-bottom:14px;}
+  .ssyn.empty{color:var(--dim);font-style:italic;}
+  .sbody{padding:4px 18px 4px;}
   .srow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
   .sactions{display:flex;gap:9px;padding:0 18px;}
   .sactions button{flex:1;border:none;cursor:pointer;font-weight:800;font-size:14px;padding:12px;border-radius:12px;}
@@ -154,6 +159,7 @@
   .watchbtn.netflix{background:var(--netflix);}
   .watchbtn.prime{background:var(--prime);color:#04222e;}
   .watchbtn.disney{background:var(--disney);}
+  .watchbtn.yt{background:#ff3d3d;}
 
   /* ---- Mode Swipe (Tinder) ---- */
   .ov.full{background:var(--bg);}
@@ -530,25 +536,61 @@
   function closeOv(id){$(id).classList.remove('show');}
   document.querySelectorAll('.ov .back[data-close]').forEach(b=>b.addEventListener('click',e=>closeOv(e.target.closest('.ov').id)));
 
+  /* ---- bande-annonce (recherche YouTube FR, sans clé) ---- */
+  const ytUrl = m => `https://www.youtube.com/results?search_query=${encodeURIComponent(`${m.t} ${m.year||''} bande annonce VF`)}`;
+  const trailerBtn = m => `<a class="watchbtn yt" href="${ytUrl(m)}" target="_blank" rel="noopener">🎬 Bande-annonce (YouTube)</a>`;
+  const fmtRuntime = min => { if(!min) return ''; const h=Math.floor(min/60), r=min%60; return h ? `${h}h${r?String(r).padStart(2,'0'):''}` : `${r}min`; };
+
+  /* ---- détails enrichis (synopsis, durée, saisons) via TMDB, à l'ouverture ---- */
+  const detailCache={};
+  async function fetchDetail(m){
+    if(!tmdbKey || m.id==null) return null;
+    const k=`${m.type}|${m.id}`;
+    if(detailCache[k]!==undefined) return detailCache[k];
+    detailCache[k]=null;
+    try{
+      const kind=m.type==="film"?"movie":"tv";
+      const d=await tmdb(`/${kind}/${m.id}?language=fr-FR`);
+      const rt=kind==="movie"? d.runtime : (Array.isArray(d.episode_run_time)?d.episode_run_time[0]:0);
+      detailCache[k]={ overview:d.overview||"", runtime:rt||0, seasons:kind==="tv"?(d.number_of_seasons||0):0 };
+    }catch(e){ detailCache[k]=null; }
+    return detailCache[k];
+  }
+
   /* ---- détail (bottom sheet) ---- */
   function openSheet(m){
     if(!m)return;
-    $('sheetBox').innerHTML = `
-      <div class="shead" style="--g:${grad(m.t)}"><span class="grab"></span><span class="wm">${initials(m.t)}</span></div>
-      <div class="sbody">
-        <h3>${esc(m.t)}</h3>
-        <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${metaLine(m)}</div>
-        <div class="srow">
-          ${platPills(m)}
-          ${genrePills(m)}
+    const live = !!(tmdbKey && m.id!=null);
+    const box=$('sheetBox');
+    box.dataset.cur=uidOf(m);
+    box.innerHTML = `
+      <span class="grab"></span>
+      <div class="stop">
+        <div class="sposter" data-poster style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span></div>
+        <div class="sheadinfo">
+          <h3>${esc(m.t)}</h3>
+          <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${metaLine(m)}<span id="sextra"></span></div>
+          <div class="srow">${platPills(m)}</div>
         </div>
+      </div>
+      ${live?`<div class="ssyn" id="ssyn">Chargement du résumé…</div>`:''}
+      <div class="sbody">
+        ${genrePills(m)?`<div class="srow">${genrePills(m)}</div>`:''}
+        ${trailerBtn(m)}
         ${watchBtns(m)}
       </div>
       <div class="sactions">
         <button class="btn-replay" id="sFav">${isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter'}</button>
         <button class="btn-ok" id="sAgain">🎲 Autre idée</button>
       </div>`;
-    loadHeadPoster($('sheetBox').querySelector('.shead'), m);
+    loadHeadPoster(box.querySelector('.sposter'), m);
+    if(live) fetchDetail(m).then(d=>{
+      if(box.dataset.cur!==uidOf(m)) return;   // l'utilisateur a changé de fiche entre-temps
+      const syn=$('ssyn'), ex=$('sextra');
+      const extra=[]; if(d&&d.runtime) extra.push(fmtRuntime(d.runtime)); if(d&&d.seasons) extra.push(`${d.seasons} saison${d.seasons>1?'s':''}`);
+      if(ex&&extra.length) ex.textContent=' · '+extra.join(' · ');
+      if(syn){ const t=d&&d.overview; syn.textContent=t||"Pas de résumé disponible en français."; syn.classList.toggle('empty',!t); }
+    });
     $('sFav').onclick=()=>{toggleFav(m.t);$('sFav').textContent=isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter';
       const on=isFav(m.t);
       resultsEl.querySelectorAll(`[data-fav="${cssEsc(m.t)}"]`).forEach(card=>{card.classList.toggle('on',on);card.textContent=on?'♥':'♡';});};
