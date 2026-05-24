@@ -13,6 +13,16 @@
     --netflix:#e50914; --prime:#00a8e1; --disney:#1f6cff;
     --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
   }
+  /* ---- Thème Pucinette 🎀 (pour Titia 💕) ---- */
+  body.pucinette{
+    --bg:#1a0a16; --bg2:#2a0f22; --bg3:#3a1530;
+    --txt:#ffe9f4; --dim:#e3a9cb; --border:#5a2748;
+    --accent:#ff8fc7; --accent2:#ff3d8b; --gold:#ffd36e;
+    background:radial-gradient(130% 70% at 50% -10%, #4a1638 0%, var(--bg) 58%);
+  }
+  body.pucinette .brand h1{background:linear-gradient(90deg,#fff,#ffb3d9);-webkit-background-clip:text;background-clip:text;}
+  body.pucinette #theme{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;}
+
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
@@ -20,8 +30,10 @@
     color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     line-height:1.4;-webkit-font-smoothing:antialiased;min-height:100vh;
     padding-bottom:calc(28px + var(--sb));
+    transition:background .3s;
   }
   button{font-family:inherit;}
+  .dedicace{margin-top:9px;color:var(--accent2);font-weight:800;font-size:12px;}
 
   header{padding:calc(14px + var(--st)) 16px 6px;}
   .brand{display:flex;align-items:center;gap:9px;}
@@ -162,8 +174,9 @@
   .pimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s;}
   .haspim>.pimg{opacity:1;}
   .haspim>.wm{display:none;}
-  .gear{margin-left:auto;background:var(--bg2);border:1px solid var(--border);color:var(--txt);
+  .gear{background:var(--bg2);border:1px solid var(--border);color:var(--txt);
     width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;flex:0 0 auto;}
+  #theme{margin-left:auto;}
   .watchbtn{display:block;text-align:center;text-decoration:none;color:#fff;font-weight:800;font-size:15px;padding:13px;border-radius:12px;}
   .watchbtn + .watchbtn{margin-top:8px;}
   .watchbtn.netflix{background:var(--netflix);}
@@ -228,6 +241,7 @@
       <div>
         <h1>On regarde quoi ?</h1>
       </div>
+      <button id="theme" class="gear" title="Thème Pucinette" aria-label="Changer de thème">🎀</button>
       <button id="gear" class="gear" title="Affiches (clé TMDB)" aria-label="Réglages affiches">⚙️</button>
     </div>
     <p>Les mieux notés sur Netflix, Prime Video &amp; Disney+ (France)</p>
@@ -296,6 +310,7 @@
   <footer>
     Catalogue live via TMDB / JustWatch (région France) avec une clé ⚙️, sinon sélection curée.<br>
     Disponibilités et notes indicatives, susceptibles d'évoluer selon les catalogues.
+    <div class="dedicace" id="dedicace" hidden>🎀 Thème Pucinette — pour Titia 💕</div>
   </footer>
 
   <!-- Roulette -->
@@ -921,6 +936,23 @@
     detailCache={}; saveDetail();            // on rafraîchit aussi les fiches
     await goLive(true);
     btn.disabled=false;
+  });
+
+  /* ---- thème (Pucinette 🎀 pour Titia) ---- */
+  const THKEY="orq_theme";
+  function applyTheme(t){
+    const on = t==="pucinette";
+    document.body.classList.toggle('pucinette', on);
+    $('theme').textContent = on ? '🌙' : '🎀';
+    $('theme').title = on ? 'Revenir au thème sombre' : 'Thème Pucinette';
+    $('dedicace').hidden = !on;
+  }
+  let theme=''; try{ theme=localStorage.getItem(THKEY)||''; }catch(e){}
+  applyTheme(theme);
+  $('theme').addEventListener('click',()=>{
+    theme = theme==="pucinette" ? "" : "pucinette";
+    try{ localStorage.setItem(THKEY,theme); }catch(e){}
+    applyTheme(theme);
   });
 
   /* ---- init ---- */
