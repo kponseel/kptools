@@ -80,7 +80,8 @@
   .tile .cm{font-size:10.5px;color:#d8d8e6;margin-top:2px;}
   .badge-rate{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);
     color:var(--gold);font-size:11.5px;font-weight:800;padding:3px 6px;border-radius:8px;}
-  .pdot{position:absolute;top:9px;left:9px;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.35);}
+  .pdots{position:absolute;top:9px;left:9px;display:flex;gap:4px;}
+  .pdot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 2px rgba(0,0,0,.35);}
   .pdot.netflix{background:var(--netflix);} .pdot.prime{background:var(--prime);} .pdot.disney{background:var(--disney);}
   .tile .fav{position:absolute;bottom:8px;right:8px;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
     background:rgba(0,0,0,.5);backdrop-filter:blur(3px);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;line-height:1;}
@@ -149,6 +150,7 @@
   .gear{margin-left:auto;background:var(--bg2);border:1px solid var(--border);color:var(--txt);
     width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;line-height:1;flex:0 0 auto;}
   .watchbtn{display:block;text-align:center;text-decoration:none;color:#fff;font-weight:800;font-size:15px;padding:13px;border-radius:12px;}
+  .watchbtn + .watchbtn{margin-top:8px;}
   .watchbtn.netflix{background:var(--netflix);}
   .watchbtn.prime{background:var(--prime);color:#04222e;}
   .watchbtn.disney{background:var(--disney);}
@@ -217,7 +219,7 @@
 
     <div class="search">
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
-      <input id="q" type="search" inputmode="search" placeholder="Rechercher un titre, un genre…" autocomplete="off">
+      <input id="q" type="search" inputmode="search" placeholder="Rechercher un titre, un genre…" aria-label="Rechercher un titre ou un genre" autocomplete="off">
     </div>
 
     <div class="chips" id="platChips">
@@ -251,21 +253,21 @@
   </div>
 
   <div class="controls">
-    <select id="genre"><option value="all">Tous les genres</option></select>
+    <select id="genre" aria-label="Filtrer par genre"><option value="all">Tous les genres</option></select>
     <div class="viewtg" id="viewtg">
       <button data-view="grid" aria-pressed="true" title="Grille">▦</button>
       <button data-view="list" aria-pressed="false" title="Liste">☰</button>
     </div>
   </div>
   <div class="controls tight">
-    <select id="minr">
+    <select id="minr" aria-label="Note minimale">
       <option value="0">Toutes notes</option>
       <option value="7">★ 7+</option>
       <option value="7.5">★ 7,5+</option>
       <option value="8">★ 8+</option>
       <option value="8.5">★ 8,5+</option>
     </select>
-    <select id="sort">
+    <select id="sort" aria-label="Trier">
       <option value="rating">Note ↓</option>
       <option value="year">Plus récent</option>
       <option value="title">A → Z</option>
@@ -298,9 +300,9 @@
 <script src="data.js"></script>
 <script>
 (function(){
-  let DATA = (window.DATA||[]).slice();
-  const CURATED = (window.DATA||[]).slice();
-  if(!DATA.length){ document.getElementById('results').innerHTML='<div class="empty">Base de données introuvable (data.js non chargé).</div>'; return; }
+  const RAWCURATED = (window.DATA||[]).slice();
+  if(!RAWCURATED.length){ document.getElementById('results').innerHTML='<div class="empty">Base de données introuvable (data.js non chargé).</div>'; return; }
+  let DATA = [], CURATED = [];
 
   const PLAT = {netflix:"Netflix", prime:"Prime Video", disney:"Disney+"};
   const FAVKEY = "orq_fav_v1";
@@ -337,6 +339,29 @@
   function hueOf(t){let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))%360;return h;}
   function grad(t){const h=hueOf(t);return `linear-gradient(150deg,hsl(${h} 58% 34%),hsl(${(h+50)%360} 62% 17%))`;}
   const typeLabel = m => m.type==="film"?"Film":"Série";
+  const metaLine = m => [typeLabel(m), m.year||null].filter(Boolean).join(" · ");
+  const genrePills = m => m.genre.split(" · ").filter(g=>g&&g!=="—").map(g=>`<span class="pill">${esc(g)}</span>`).join("");
+  const platPills = m => m.plats.map(p=>`<span class="pill plat ${p}">${PLAT[p]}</span>`).join("");
+
+  /* ---- fusion : un même titre dispo sur plusieurs plateformes = une seule fiche ---- */
+  const PORDER = {netflix:0, prime:1, disney:2};
+  function mergeCatalog(items){
+    const map=new Map();
+    for(const m of items){
+      const key = m.id!=null ? `${m.type}|${m.id}` : `${m.type}|${norm(m.t)}`;
+      const ex=map.get(key);
+      if(ex){
+        if(!ex.plats.includes(m.plat)) ex.plats.push(m.plat);
+        if(m.rating>ex.rating) ex.rating=m.rating;
+        if(!ex.poster && m.poster) ex.poster=m.poster;
+        if((!ex.genre||ex.genre==="—") && m.genre && m.genre!=="—") ex.genre=m.genre;
+        if(!ex.year && m.year) ex.year=m.year;
+      } else { map.set(key, {...m, plats:[m.plat]}); }
+    }
+    const out=[...map.values()];
+    out.forEach(m=>m.plats.sort((a,b)=>PORDER[a]-PORDER[b]));
+    return out;
+  }
 
   /* ---- liens "Regarder sur la plateforme" (recherche, sans clé) ---- */
   const WATCH = {
@@ -344,8 +369,11 @@
     prime:   t=>`https://www.primevideo.com/search/?phrase=${encodeURIComponent(t)}`,
     disney:  t=>`https://www.disneyplus.com/search?q=${encodeURIComponent(t)}`
   };
-  const watchUrl = m => WATCH[m.plat](m.t);
-  const watchBtn = m => `<a class="watchbtn ${m.plat}" href="${watchUrl(m)}" target="_blank" rel="noopener">▶ Regarder sur ${PLAT[m.plat]}</a>`;
+  const watchBtn  = (plat,t) => `<a class="watchbtn ${plat}" href="${WATCH[plat](t)}" target="_blank" rel="noopener">▶ Regarder sur ${PLAT[plat]}</a>`;
+  const watchBtns = m => m.plats.map(p=>watchBtn(p,m.t)).join("");
+
+  CURATED = mergeCatalog(RAWCURATED);
+  DATA = CURATED.slice();
 
   /* ---- affiches TMDB (optionnel, nécessite une clé gratuite) ---- */
   const TMDBK="orq_tmdb_key", PCACHE="orq_posters_v1";
@@ -358,8 +386,7 @@
     try{
       const type=m.type==="film"?"movie":"tv";
       const yk=m.type==="film"?"primary_release_year":"first_air_date_year";
-      const url=`https://api.themoviedb.org/3/search/${type}?api_key=${encodeURIComponent(tmdbKey)}&language=fr-FR&include_adult=false&query=${encodeURIComponent(m.t)}&${yk}=${m.year}`;
-      const j=await (await fetch(url)).json();
+      const j=await tmdb(`/search/${type}?language=fr-FR&include_adult=false&query=${encodeURIComponent(m.t)}&${yk}=${m.year}`);
       const hit=(j.results||[]).find(x=>x.poster_path);
       if(hit){ posters[m.t]="https://image.tmdb.org/t/p/w342"+hit.poster_path; }
       savePosters();
@@ -392,7 +419,7 @@
 
   /* ---- index par identifiant unique (titre peut exister sur 2 plateformes) ---- */
   let byUid=new Map();
-  const uidOf = m => m.id!=null ? `${m.plat}|${m.type}|${m.id}` : `t|${m.t}`;
+  const uidOf = m => m.id!=null ? `${m.type}|${m.id}` : `t|${norm(m.t)}`;
   function reindex(){ byUid=new Map(); DATA.forEach(m=>byUid.set(uidOf(m),m)); }
 
   /* genres dynamiques (recalculés selon le catalogue chargé) */
@@ -408,7 +435,7 @@
     const q=norm(state.q.trim());
     const moodSet = state.mood!=="all" ? new Set(MOODS[state.mood]||[]) : null;
     filtered = DATA.filter(m=>{
-      if(state.plat!=="all" && m.plat!==state.plat) return false;
+      if(state.plat!=="all" && !m.plats.includes(state.plat)) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.minRating && m.rating < state.minRating) return false;
       const gs = m.genre.split(" · ");
@@ -426,10 +453,10 @@
   function tileHTML(m){
     return `<article class="tile" data-t="${esc(m.t)}" data-uid="${esc(uidOf(m))}" data-poster style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
-      <span class="pdot ${m.plat}"></span>
+      <span class="pdots">${m.plats.map(p=>`<span class="pdot ${p}"></span>`).join("")}</span>
       <span class="badge-rate">★ ${m.rating.toFixed(1)}</span>
       <button class="fav ${isFav(m.t)?'on':''}" data-fav="${esc(m.t)}" aria-label="Ajouter à ma liste">${isFav(m.t)?'♥':'♡'}</button>
-      <span class="cap"><span class="ct">${esc(m.t)}</span><span class="cm">${typeLabel(m)} · ${m.year}</span></span>
+      <span class="cap"><span class="ct">${esc(m.t)}</span><span class="cm">${metaLine(m)}</span></span>
     </article>`;
   }
   function cardHTML(m){
@@ -437,9 +464,9 @@
       <div class="mini" data-t="${esc(m.t)}" data-poster><span class="wm">${initials(m.t)}</span></div>
       <div class="info">
         <div class="tl"><h2>${esc(m.t)}</h2><span class="rt">★ ${m.rating.toFixed(1)}</span></div>
-        <div class="meta">${typeLabel(m)} · ${m.year} · ${esc(m.genre)}</div>
+        <div class="meta">${[metaLine(m), (m.genre&&m.genre!=="—")?esc(m.genre):null].filter(Boolean).join(" · ")}</div>
         <div class="tags">
-          <span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>
+          ${platPills(m)}
           <button class="heart ${isFav(m.t)?'on':''}" data-fav="${esc(m.t)}" aria-label="Ajouter à ma liste">${isFav(m.t)?'♥':'♡'}</button>
         </div>
       </div>
@@ -510,12 +537,12 @@
       <div class="shead" style="--g:${grad(m.t)}"><span class="grab"></span><span class="wm">${initials(m.t)}</span></div>
       <div class="sbody">
         <h3>${esc(m.t)}</h3>
-        <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${typeLabel(m)} · ${m.year}</div>
+        <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${metaLine(m)}</div>
         <div class="srow">
-          <span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>
-          ${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}
+          ${platPills(m)}
+          ${genrePills(m)}
         </div>
-        ${watchBtn(m)}
+        ${watchBtns(m)}
       </div>
       <div class="sactions">
         <button class="btn-replay" id="sFav">${isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter'}</button>
@@ -523,7 +550,8 @@
       </div>`;
     loadHeadPoster($('sheetBox').querySelector('.shead'), m);
     $('sFav').onclick=()=>{toggleFav(m.t);$('sFav').textContent=isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter';
-      const card=resultsEl.querySelector(`[data-fav="${cssEsc(m.t)}"]`); if(card){const on=isFav(m.t);card.classList.toggle('on',on);card.textContent=on?'♥':'♡';}};
+      const on=isFav(m.t);
+      resultsEl.querySelectorAll(`[data-fav="${cssEsc(m.t)}"]`).forEach(card=>{card.classList.toggle('on',on);card.textContent=on?'♥':'♡';});};
     $('sAgain').onclick=()=>{const pool=filtered.length?filtered:DATA;openSheet(pool[Math.floor(Math.random()*pool.length)]);};
     openOv('sheet');
   }
@@ -536,9 +564,9 @@
       <div class="rbody">
         <div class="rkicker">${spinning?'On tire au sort…':'Ce soir, vous regardez'}</div>
         <h3>${esc(m.t)}</h3>
-        <div class="rmeta">${typeLabel(m)} · ${m.year}</div>
-        <div class="rtags"><span class="pill plat ${m.plat}">${PLAT[m.plat]}</span>${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}</div>
-        ${spinning?'':`<div style="margin-bottom:12px">${watchBtn(m)}</div>`}
+        <div class="rmeta">${metaLine(m)}</div>
+        <div class="rtags">${platPills(m)}${genrePills(m)}</div>
+        ${spinning?'':`<div style="margin-bottom:12px">${watchBtns(m)}</div>`}
         <div class="ractions">
           <button class="btn-replay" id="rReplay">🎲 Rejouer</button>
           <button class="btn-ok" id="rOk">Parfait 🍿</button>
@@ -566,7 +594,7 @@
 
   function swMatches(){
     return DATA.filter(m=>{
-      if(sw.plat!=="all" && m.plat!==sw.plat) return false;
+      if(sw.plat!=="all" && !m.plats.includes(sw.plat)) return false;
       if(sw.type!=="all" && m.type!==sw.type) return false;
       if(sw.genre!=="all" && !m.genre.split(" · ").includes(sw.genre)) return false;
       if(sw.year && m.year < sw.year) return false;
@@ -616,11 +644,11 @@
     return `<div class="swcard" style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
       <div class="stamp like">J'AIME</div><div class="stamp nope">PASSER</div>
-      <div class="top"><span class="pill plat ${m.plat}">${PLAT[m.plat]}</span><span class="rate">★ ${m.rating.toFixed(1)}</span></div>
+      <div class="top">${platPills(m)}<span class="rate">★ ${m.rating.toFixed(1)}</span></div>
       <div class="cap">
         <h3>${esc(m.t)}</h3>
-        <div class="m">${typeLabel(m)} · ${m.year}</div>
-        <div class="tg">${m.genre.split(" · ").map(g=>`<span class="pill">${esc(g)}</span>`).join("")}</div>
+        <div class="m">${metaLine(m)}</div>
+        <div class="tg">${genrePills(m)}</div>
       </div>
     </div>`;
   }
@@ -727,8 +755,11 @@
   const LIVEKEY = "orq_live_v1", LIVE_TTL = 24*3600*1000;
 
   async function tmdb(pathQuery){
-    const sep = pathQuery.includes('?') ? '&' : '?';
-    const r = await fetch(`https://api.themoviedb.org/3${pathQuery}${sep}api_key=${encodeURIComponent(tmdbKey)}`);
+    const isV4 = tmdbKey.includes(".");   // jeton v4 (JWT) -> en-tête ; sinon clé v3 -> query
+    let url = `https://api.themoviedb.org/3${pathQuery}`, opts;
+    if(isV4){ opts={headers:{Authorization:`Bearer ${tmdbKey}`}}; }
+    else { url += (pathQuery.includes('?')?'&':'?') + `api_key=${encodeURIComponent(tmdbKey)}`; }
+    const r = await fetch(url, opts);
     if(!r.ok) throw new Error("TMDB "+r.status);
     return r.json();
   }
@@ -757,16 +788,17 @@
   }
   async function fetchLiveCatalog(){
     const gmap = await fetchGenres();
-    const out = [];
-    for(const [plat,prov] of Object.entries(PROV)){
+    const jobs = Object.entries(PROV).map(([plat,prov])=>(async()=>{
       const [mv,tv] = await Promise.all([fetchKind(prov,'movie'), fetchKind(prov,'tv')]);
+      const acc=[];
       [['movie',mv],['tv',tv]].forEach(([kind,arr])=>{
         const seen=new Set();
         arr.forEach(r=>{ if(seen.has(r.id))return; seen.add(r.id);
-          const n=normalize(r,kind,plat,gmap); if(n && n.rating>0) out.push(n); });
+          const n=normalize(r,kind,plat,gmap); if(n && n.rating>0) acc.push(n); });
       });
-    }
-    return out;
+      return acc;
+    })());
+    return (await Promise.all(jobs)).flat();
   }
   function readCache(){ try{const c=JSON.parse(localStorage.getItem(LIVEKEY)); if(c&&c.items&&c.items.length&&Date.now()-c.ts<LIVE_TTL) return c.items;}catch(e){} return null; }
   function writeCache(items){ try{localStorage.setItem(LIVEKEY,JSON.stringify({ts:Date.now(),items}));}catch(e){} }
@@ -780,10 +812,11 @@
       catch(e){ DATA=CURATED.slice(); reindex(); buildGenres(); render(); setStatus("⚠️ Échec TMDB (clé invalide ?) — sélection curée affichée."); return false; }
     }
     if(!items.length){ setStatus("Aucun résultat TMDB — sélection curée affichée."); return false; }
-    items.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
-    DATA = items; reindex(); buildGenres(); render();
-    const nf=items.filter(m=>m.plat==='netflix').length, pr=items.filter(m=>m.plat==='prime').length, di=items.filter(m=>m.plat==='disney').length;
-    setStatus(`Catalogue live FR · ${items.length} titres (Netflix ${nf} · Prime ${pr} · Disney+ ${di}) · ⚙️ rafraîchir`);
+    DATA = mergeCatalog(items);
+    DATA.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
+    reindex(); buildGenres(); render();
+    const cnt=p=>DATA.filter(m=>m.plats.includes(p)).length;
+    setStatus(`Catalogue live FR · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · ⚙️ rafraîchir`);
     return true;
   }
 
