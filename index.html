@@ -513,11 +513,13 @@
     </article>`;
   }
 
+  const filtersActive = () => state.q || state.plat!=="all" || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.minRating || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
     const clearBtn = (state.favOnly && favs.size) ? ` <button class="clearfav" id="clearFavs">🗑️ Vider ma liste</button>` : "";
-    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}${clearBtn}`;
+    const resetBtn = filtersActive() ? ` <button class="clearfav" id="resetFilters">✕ Réinitialiser les filtres</button>` : "";
+    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}${clearBtn}${resetBtn}`;
     $('surprise').disabled = filtered.length===0;
     $('surprise').style.opacity = filtered.length===0 ? .5 : 1;
     if(!filtered.length){
@@ -534,7 +536,18 @@
     favs.clear(); try{localStorage.setItem(FAVKEY,JSON.stringify([]));}catch(e){}
     updateFavChip(); render();
   }
-  countEl.addEventListener('click', e=>{ if(e.target.closest('#clearFavs')) clearFavs(); });
+  function pressGroup(id,key,val){ $(id).querySelectorAll('.chip').forEach(c=>{ if(c.dataset[key]) c.setAttribute('aria-pressed', c.dataset[key]===val?'true':'false'); }); }
+  function resetFilters(){
+    Object.assign(state,{q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,favOnly:false});
+    $('q').value=""; $('genre').value="all"; $('minr').value="0";
+    pressGroup('platChips','plat','all'); pressGroup('typeChips','type','all'); pressMood();
+    $('favToggle').setAttribute('aria-pressed','false');
+    render();
+  }
+  countEl.addEventListener('click', e=>{
+    if(e.target.closest('#clearFavs')) clearFavs();
+    else if(e.target.closest('#resetFilters')) resetFilters();
+  });
 
   /* ---- interactions liste/grille (délégation) ---- */
   resultsEl.addEventListener('click', e=>{
