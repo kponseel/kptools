@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a12">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="On regarde quoi ?">
 <title>On regarde quoi ?</title>
 <style>
   :root{
@@ -47,8 +54,7 @@
   .brand h1{font-size:23px;font-weight:900;letter-spacing:-.5px;margin:0;
     background:linear-gradient(90deg,#fff,#c9b8ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .brand .emo{font-size:22px;}
-  .brand p{margin:3px 0 0;font-size:12.5px;color:var(--dim);}
-  .brand .stat{margin:2px 0 0;font-size:11px;color:var(--dim);opacity:.8;}
+  header>p{margin:3px 0 0;font-size:12.5px;color:var(--dim);}
   .statrow{display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap;}
   .statrow .stat{font-size:11px;color:var(--dim);opacity:.85;}
   .upd{background:var(--bg2);border:1px solid var(--border);color:var(--txt);font-size:11px;font-weight:700;
@@ -323,17 +329,17 @@
   </footer>
 
   <!-- Roulette -->
-  <div class="ov" id="roul">
+  <div class="ov" id="roul" role="dialog" aria-modal="true" aria-label="Tirage au sort">
     <div class="back" data-close></div>
     <div class="box" id="roulBox"></div>
   </div>
   <!-- Détail -->
-  <div class="ov" id="sheet">
+  <div class="ov" id="sheet" role="dialog" aria-modal="true" aria-label="Détail du titre">
     <div class="back" data-close></div>
     <div class="box" id="sheetBox"></div>
   </div>
   <!-- Mode Swipe -->
-  <div class="ov full" id="swipe">
+  <div class="ov full" id="swipe" role="dialog" aria-modal="true" aria-label="Mode Swipe">
     <div class="box" id="swipeBox"></div>
   </div>
 
@@ -592,8 +598,9 @@
 
   /* ---- overlays helpers ---- */
   function openOv(id){$(id).classList.add('show');}
-  function closeOv(id){$(id).classList.remove('show');}
+  function closeOv(id){ $(id).classList.remove('show'); if(id==='swipe'){ updateFavChip(); render(); } }   // resync grille/cœurs au retour du Swipe
   document.querySelectorAll('.ov .back[data-close]').forEach(b=>b.addEventListener('click',e=>closeOv(e.target.closest('.ov').id)));
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const ov=document.querySelector('.ov.show'); if(ov) closeOv(ov.id); } });
 
   /* ---- bande-annonce (recherche YouTube FR, sans clé) ---- */
   const ytUrl = m => `https://www.youtube.com/results?search_query=${encodeURIComponent(`${m.t} ${m.year||''} bande annonce VF`)}`;
@@ -802,7 +809,7 @@
         <button class="swbtn nope" id="swNope" title="Passer">✕</button>
         <button class="swbtn like" id="swLike" title="J'aime">♥</button>
       </div>`;
-    $('swClose').onclick=()=>{ closeOv('swipe'); updateFavChip(); };
+    $('swClose').onclick=()=>closeOv('swipe');
     $('swUndo').onclick=undo;
     $('swNope').onclick=()=>trigger('nope');
     $('swLike').onclick=()=>trigger('like');
@@ -872,7 +879,7 @@
           <button class="ghost" id="swRestart">Recommencer</button>
         </div>
       </div></div>`;
-    $('swClose').onclick=()=>{ closeOv('swipe'); updateFavChip(); };
+    $('swClose').onclick=()=>closeOv('swipe');
     $('swRestart').onclick=renderSetup;
     const see=$('swSeeList'); if(see) see.onclick=()=>{
       closeOv('swipe');
@@ -997,6 +1004,11 @@
   render();
   if(tmdbKey){ goLive(false); }
   else setStatus(`${DATA.length} titres (sélection curée) · ⚙️ ajoute une clé TMDB pour le vrai catalogue live FR`);
+
+  /* ---- PWA : service worker (installable + hors-ligne) ---- */
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  }
 })();
 </script>
 </body>
