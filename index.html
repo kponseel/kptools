@@ -403,9 +403,10 @@
   CURATED = mergeCatalog(RAWCURATED);
   DATA = CURATED.slice();
 
-  /* ---- affiches TMDB (optionnel, nécessite une clé gratuite) ---- */
+  /* ---- affiches TMDB (clé incluse par défaut ; surchargeable via ⚙️) ---- */
   const TMDBK="orq_tmdb_key", PCACHE="orq_posters_v1";
-  let tmdbKey=""; try{tmdbKey=localStorage.getItem(TMDBK)||"";}catch(e){}
+  const DEFAULT_TMDB="750aa479ccc2bdc391190f07374bc600";   // clé v3 (lecture seule, gratuite)
+  let tmdbKey=DEFAULT_TMDB; try{ const s=localStorage.getItem(TMDBK); if(s) tmdbKey=s; }catch(e){}
   let posters={}; try{posters=JSON.parse(localStorage.getItem(PCACHE)||"{}");}catch(e){}
   const savePosters=()=>{try{localStorage.setItem(PCACHE,JSON.stringify(posters));}catch(e){}};
   async function ensurePoster(m){
@@ -622,11 +623,11 @@
     $('viewtg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));render();});
   $('gear').addEventListener('click',async ()=>{
     const old=tmdbKey;
-    const v=prompt("Clé API TMDB (v3) ou jeton (v4) pour le catalogue LIVE FR + affiches réelles.\nLaisse vide pour revenir à la sélection curée.\n\nGratuit : themoviedb.org → Paramètres → API.", tmdbKey);
+    const v=prompt("Clé API TMDB perso (optionnel).\nLaisse vide pour utiliser la clé incluse par défaut.\n\nGratuit : themoviedb.org → Paramètres → API.", (function(){try{return localStorage.getItem(TMDBK)||"";}catch(e){return"";}})());
     if(v===null) return;
-    tmdbKey=v.trim();
-    try{ tmdbKey?localStorage.setItem(TMDBK,tmdbKey):localStorage.removeItem(TMDBK); }catch(e){}
-    if(!tmdbKey){ DATA=CURATED.slice(); posters={}; savePosters(); reindex(); buildGenres(); updateFilterBtn(); render(); $('refresh').hidden=true; setStatus(`${DATA.length} titres (sélection curée)`); return; }
+    const key=v.trim();
+    if(key){ tmdbKey=key; try{localStorage.setItem(TMDBK,key);}catch(e){} }
+    else { tmdbKey=DEFAULT_TMDB; try{localStorage.removeItem(TMDBK);}catch(e){} }
     if(tmdbKey!==old){ try{ localStorage.removeItem(LIVEKEY); }catch(e){} detailCache={}; saveDetail(); await goLive(true); }   // clé changée -> on récupère
     else { await goLive(false); }   // même clé -> on garde le cache existant
   });
