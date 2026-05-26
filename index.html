@@ -211,6 +211,21 @@
   .watchbtn.prime{background:var(--prime);color:#04222e;}
   .watchbtn.disney{background:var(--disney);}
   .watchbtn.yt{background:#ff3d3d;}
+  .hidebtn{display:block;width:100%;margin-top:10px;background:transparent;border:1px solid var(--border);color:var(--dim);
+    font-weight:700;font-size:13.5px;padding:11px;border-radius:12px;cursor:pointer;}
+
+  /* ---- Stats / Mes goûts ---- */
+  .statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 6px;}
+  .statcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px 8px;text-align:center;}
+  .statcard .num{font-size:19px;font-weight:900;line-height:1.1;}
+  .statcard .cap{font-size:10.5px;color:var(--dim);margin-top:3px;}
+  .domood{margin:12px 0 2px;font-size:15px;font-weight:800;}
+  .domood span{color:var(--accent2);}
+  .statbar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;}
+  .statbar .lab{flex:0 0 38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .statbar .track{flex:1;height:9px;background:var(--bg3);border-radius:999px;overflow:hidden;}
+  .statbar .fill{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+  .statbar .val{flex:0 0 auto;color:var(--dim);font-weight:700;min-width:18px;text-align:right;}
 
   /* ---- Mode Swipe (Tinder) ---- */
   .ov.full{background:var(--bg);}
@@ -288,6 +303,7 @@
 
   <div class="toolbar">
     <button id="openFilters" class="filterbtn">☰ Filtres</button>
+    <button id="openStats" class="gear" title="Mes goûts" aria-label="Mes goûts">📊</button>
     <button class="chip fav" id="favToggle" aria-pressed="false">❤️ Ma liste</button>
     <div class="viewtg" id="viewtg">
       <button data-view="grid" aria-pressed="true" title="Grille">▦</button>
@@ -322,6 +338,10 @@
   <div class="ov full" id="filters" role="dialog" aria-modal="true" aria-label="Filtres">
     <div class="box" id="filtersBox"></div>
   </div>
+  <!-- Stats -->
+  <div class="ov full" id="stats" role="dialog" aria-modal="true" aria-label="Mes goûts">
+    <div class="box" id="statsBox"></div>
+  </div>
 
 <script src="data.js"></script>
 <script>
@@ -337,11 +357,25 @@
   const resultsEl=$('results'), countEl=$('count');
 
   /* favoris (localStorage) */
+  const HIDEKEY="orq_hidden_v1";
   let favs = new Set();
   try{ favs = new Set(JSON.parse(localStorage.getItem(FAVKEY)||"[]")); }catch(e){}
   const isFav = t => favs.has(t);
   function toggleFav(t){ favs.has(t)?favs.delete(t):favs.add(t); try{localStorage.setItem(FAVKEY,JSON.stringify([...favs]));}catch(e){} updateFavChip(); }
   function updateFavChip(){ $('favToggle').textContent = favs.size ? `❤️ Ma liste (${favs.size})` : "❤️ Ma liste"; }
+
+  /* titres masqués (localStorage) — exclus partout */
+  let hidden = new Set();
+  try{ hidden = new Set(JSON.parse(localStorage.getItem(HIDEKEY)||"[]")); }catch(e){}
+  const isHidden = t => hidden.has(t);
+  const saveHidden = () => { try{localStorage.setItem(HIDEKEY,JSON.stringify([...hidden]));}catch(e){} };
+  function addHidden(t){ hidden.add(t); saveHidden(); }
+  function removeHidden(t){ hidden.delete(t); saveHidden(); }
+  function unhideAll(){
+    if(!hidden.size) return;
+    if(!confirm(`Réafficher les ${hidden.size} titre${hidden.size>1?'s':''} masqué${hidden.size>1?'s':''} ?`)) return;
+    hidden.clear(); saveHidden(); render();
+  }
 
   const state={q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating",view:"grid",favOnly:false};
   let filtered=[], draft={};
@@ -467,6 +501,7 @@
     const q=norm(state.q.trim());
     const moodSet = state.mood!=="all" ? new Set(MOODS[state.mood]||[]) : null;
     filtered = DATA.filter(m=>{
+      if(hidden.has(m.t)) return false;   // titres masqués : jamais affichés
       if(state.plat!=="all" && !m.plats.includes(state.plat)) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.minRating && m.rating < state.minRating) return false;
@@ -513,7 +548,8 @@
     resultsEl.className = "results "+state.view;
     const clearBtn = (state.favOnly && favs.size) ? ` <button class="clearfav" id="clearFavs">🗑️ Vider ma liste</button>` : "";
     const resetBtn = filtersActive() ? ` <button class="clearfav" id="resetFilters">✕ Réinitialiser les filtres</button>` : "";
-    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}${clearBtn}${resetBtn}`;
+    const hideBtn = hidden.size ? ` <button class="clearfav" id="unhideAll">🙈 ${hidden.size} masqué${hidden.size>1?'s':''}</button>` : "";
+    countEl.innerHTML = `<b>${filtered.length}</b> résultat${filtered.length>1?'s':''}${clearBtn}${resetBtn}${hideBtn}`;
     $('surprise').disabled = filtered.length===0;
     $('surprise').style.opacity = filtered.length===0 ? .5 : 1;
     if(!filtered.length){
@@ -539,6 +575,7 @@
   countEl.addEventListener('click', e=>{
     if(e.target.closest('#clearFavs')) clearFavs();
     else if(e.target.closest('#resetFilters')) resetFilters();
+    else if(e.target.closest('#unhideAll')) unhideAll();
   });
 
   /* ---- interactions liste/grille (délégation) ---- */
@@ -561,6 +598,7 @@
     const moodSet=d.mood!=="all"?new Set(MOODS[d.mood]||[]):null;
     let n=0;
     for(const m of DATA){
+      if(hidden.has(m.t)) continue;
       if(d.plat!=="all" && !m.plats.includes(d.plat)) continue;
       if(d.type!=="all" && m.type!==d.type) continue;
       if(d.minRating && m.rating<d.minRating) continue;
@@ -704,6 +742,7 @@
         ${genrePills(m)?`<div class="srow">${genrePills(m)}</div>`:''}
         ${trailerBtn(m)}
         ${watchBtns(m)}
+        <button class="hidebtn" id="sHide">🙈 Ne plus afficher ce titre</button>
       </div>
       <div class="sactions">
         <button class="btn-replay" id="sFav">${isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter'}</button>
@@ -729,6 +768,7 @@
       const on=isFav(m.t);
       resultsEl.querySelectorAll(`[data-fav="${cssEsc(m.t)}"]`).forEach(card=>{card.classList.toggle('on',on);card.textContent=on?'♥':'♡';});};
     $('sAgain').onclick=()=>{const pool=filtered.length?filtered:DATA;openSheet(pool[Math.floor(Math.random()*pool.length)]);};
+    $('sHide').onclick=()=>{ addHidden(m.t); if(isFav(m.t)) toggleFav(m.t); closeOv('sheet'); render(); };
     openOv('sheet');
   }
   const cssEsc = s => (window.CSS&&CSS.escape)?CSS.escape(s):s.replace(/["\\]/g,"\\$&");
@@ -770,6 +810,7 @@
 
   function swMatches(){
     return DATA.filter(m=>{
+      if(hidden.has(m.t)) return false;
       if(sw.plat!=="all" && !m.plats.includes(sw.plat)) return false;
       if(sw.type!=="all" && m.type!==sw.type) return false;
       if(sw.genre!=="all" && !m.genre.split(" · ").includes(sw.genre)) return false;
@@ -892,26 +933,30 @@
   }
   function decide(action){
     const m=sw.deck[sw.idx];
-    let added=false;
-    if(action==='like' && !isFav(m.t)){ toggleFav(m.t); added=true; }
-    sw.history.push({action, added});
+    let addedFav=false, addedHide=false;
+    if(action==='like' && !isFav(m.t)){ toggleFav(m.t); addedFav=true; }
+    if(action==='nope' && !isHidden(m.t)){ addHidden(m.t); addedHide=true; }   // passer = masquer définitivement
+    sw.history.push({action, addedFav, addedHide});
     sw.idx++;
     renderDeck();
   }
   function undo(){
     if(!sw.history.length)return;
     const last=sw.history.pop(); sw.idx--;
-    if(last.action==='like' && last.added && isFav(sw.deck[sw.idx].t)) toggleFav(sw.deck[sw.idx].t);
+    const m=sw.deck[sw.idx];
+    if(last.addedFav && isFav(m.t)) toggleFav(m.t);
+    if(last.addedHide && isHidden(m.t)) removeHidden(m.t);
     renderDeck();
   }
   function renderEnd(){
     const likes = sw.history.filter(h=>h.action==='like').length;
+    const hides = sw.history.filter(h=>h.addedHide).length;
     $('swipeBox').innerHTML = `
       <div class="swtop"><h2>💘 Swipe</h2><button class="close" id="swClose">✕</button></div>
       <div class="deck"><div class="swend">
         <div class="big">${likes?'🍿':'🤷'}</div>
         <h3>${likes?`${likes} coup${likes>1?'s':''} de cœur !`:'Aucun coup de cœur'}</h3>
-        <p>${likes?'Ajoutés à votre liste d\'envies ❤️':'Réessaie avec d\'autres filtres.'}</p>
+        <p>${likes?'Ajoutés à votre liste d\'envies ❤️':'Réessaie avec d\'autres filtres.'}${hides?`<br>🙈 ${hides} titre${hides>1?'s':''} masqué${hides>1?'s':''}`:''}</p>
         <div>
           ${likes?'<button class="primary" id="swSeeList">Voir ma liste ❤️</button>':''}
           <button class="ghost" id="swRestart">Recommencer</button>
@@ -1015,6 +1060,41 @@
     await goLive(true);
     btn.disabled=false;
   });
+
+  /* ---- stats / mes goûts (basées sur les favoris) ---- */
+  const MOODLABEL={frissons:"😱 Frissons",rire:"😂 Rire",action:"💥 Action",emotion:"😢 Émotion",romance:"❤️ Romance",famille:"👨‍👩‍👧 Famille",cerveau:"🧠 Cerveau",evasion:"🌍 Évasion"};
+  function renderStats(){
+    const items=[...favs].map(byTitle).filter(Boolean);
+    let body;
+    if(!items.length){
+      body=`<div class="swend"><div class="big">📊</div><h3>Pas encore de goûts</h3><p>Like des titres (❤️ ou 💘 Mode Swipe) pour voir tes préférences ici.</p></div>`;
+    } else {
+      const n=items.length;
+      const avg=(items.reduce((s,m)=>s+(m.rating||0),0)/n).toFixed(1);
+      const films=items.filter(m=>m.type==='film').length, series=n-films;
+      const gc={}; items.forEach(m=>m.genre.split(" · ").forEach(g=>{ if(g&&g!=="—") gc[g]=(gc[g]||0)+1; }));
+      const topG=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,6);
+      const maxG=topG.length?topG[0][1]:1;
+      const pc={netflix:0,prime:0,disney:0}; items.forEach(m=>m.plats.forEach(p=>{ if(pc[p]!=null) pc[p]++; }));
+      const mc={}; items.forEach(m=>{ const gs=m.genre.split(" · "); for(const mood in MOODS){ if(MOODS[mood].some(g=>gs.includes(g))) mc[mood]=(mc[mood]||0)+1; } });
+      const topMood=Object.entries(mc).sort((a,b)=>b[1]-a[1])[0];
+      const bar=(lab,val,max)=>`<div class="statbar"><span class="lab">${lab}</span><span class="track"><span class="fill" style="width:${Math.max(6,Math.round(val/max*100))}%"></span></span><span class="val">${val}</span></div>`;
+      body=`
+        <div class="statgrid">
+          <div class="statcard"><div class="num">${n}</div><div class="cap">favoris</div></div>
+          <div class="statcard"><div class="num">★ ${avg}</div><div class="cap">note moyenne</div></div>
+          <div class="statcard"><div class="num">${films}/${series}</div><div class="cap">films / séries</div></div>
+        </div>
+        ${topMood?`<div class="domood">Ton humeur n°1 : <span>${MOODLABEL[topMood[0]]}</span></div>`:''}
+        <div class="lbl">Genres préférés</div>
+        ${topG.map(([g,v])=>bar(esc(g),v,maxG)).join("")}
+        <div class="lbl">Plateformes</div>
+        ${Object.entries(pc).filter(([p,v])=>v>0).map(([p,v])=>bar(PLAT[p],v,n)).join("")||'<div class="hint">—</div>'}`;
+    }
+    $('statsBox').innerHTML=`<div class="swtop"><h2>📊 Mes goûts</h2><button class="close" id="stClose">✕</button></div><div class="setup">${body}</div>`;
+    $('stClose').onclick=()=>closeOv('stats');
+  }
+  $('openStats').addEventListener('click',()=>{ renderStats(); openOv('stats'); });
 
   /* ---- thème (Pucinette 🎀 pour Titia) ---- */
   const THKEY="orq_theme";
