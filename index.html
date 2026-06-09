@@ -211,6 +211,13 @@
   .watchbtn.prime{background:var(--prime);color:#04222e;}
   .watchbtn.disney{background:var(--disney);}
   .watchbtn.yt{background:#ff3d3d;}
+  .watchbtn.gg{background:#4285f4;}
+
+  /* ---- zoom affiche ---- */
+  #zoom{z-index:90;}
+  .zimg{position:absolute;inset:0;margin:auto;max-width:92vw;max-height:84vh;border-radius:14px;
+    box-shadow:0 24px 70px -18px #000;cursor:zoom-out;}
+  .sposter.zoomable{cursor:zoom-in;}
   .hidebtn{display:block;width:100%;margin-top:10px;background:transparent;border:1px solid var(--border);color:var(--dim);
     font-weight:700;font-size:13.5px;padding:11px;border-radius:12px;cursor:pointer;}
 
@@ -294,6 +301,12 @@
       <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
       <input id="q" type="search" inputmode="search" placeholder="Rechercher un titre, un genre…" aria-label="Rechercher un titre ou un genre" autocomplete="off">
     </div>
+
+    <div class="chips" id="platChips">
+      <button class="chip" data-plat="netflix" aria-pressed="true">Netflix</button>
+      <button class="chip" data-plat="prime" aria-pressed="true">Prime Video</button>
+      <button class="chip" data-plat="disney" aria-pressed="false">Disney+</button>
+    </div>
   </header>
 
   <div class="bigactions">
@@ -342,6 +355,11 @@
   <div class="ov full" id="stats" role="dialog" aria-modal="true" aria-label="Mes goûts">
     <div class="box" id="statsBox"></div>
   </div>
+  <!-- Zoom affiche -->
+  <div class="ov" id="zoom" role="dialog" aria-modal="true" aria-label="Affiche en grand">
+    <div class="back" data-close></div>
+    <img class="zimg" id="zoomImg" alt="Affiche">
+  </div>
 
 <script src="data.js"></script>
 <script>
@@ -377,7 +395,15 @@
     hidden.clear(); saveHidden(); render();
   }
 
-  const state={q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating",view:"grid",favOnly:false};
+  const state={q:"",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating",view:"grid",favOnly:false};
+
+  /* plateformes sélectionnées (multi, min 1) — défaut : Netflix + Prime */
+  const PLATSEL="orq_platsel_v1";
+  let platSel=new Set(["netflix","prime"]);
+  try{ const s=JSON.parse(localStorage.getItem(PLATSEL)||"null");
+    if(Array.isArray(s)){ const v=s.filter(p=>PLAT[p]); if(v.length) platSel=new Set(v); } }catch(e){}
+  const savePlatSel=()=>{ try{localStorage.setItem(PLATSEL,JSON.stringify([...platSel]));}catch(e){} };
+  function pressPlats(){ $('platChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', platSel.has(c.dataset.plat)?'true':'false')); }
   let filtered=[], draft={};
   const YEARS_MIN=[[0,"Toutes les années"],[2024,"Depuis 2024"],[2023,"Depuis 2023"],[2022,"Depuis 2022"],[2020,"Depuis 2020"],[2015,"Depuis 2015"],[2010,"Depuis 2010"],[2000,"Depuis 2000"]];
   const RATINGS=[[0,"Toutes notes"],[6,"★ 6+"],[7,"★ 7+"],[7.5,"★ 7,5+"],[8,"★ 8+"],[8.5,"★ 8,5+"],[9,"★ 9+"]];
@@ -462,7 +488,7 @@
   function setPoster(el,url){
     if(!url || el.classList.contains('haspim') || el.querySelector(':scope>.pimg')) return;
     const img=new Image(); img.className='pimg'; img.alt=''; img.decoding='async';
-    img.onload=()=>el.classList.add('haspim');
+    img.onload=()=>{ el.classList.add('haspim'); if(el.classList.contains('sposter')) el.classList.add('zoomable'); };
     img.onerror=()=>img.remove();
     img.src=url; el.insertBefore(img, el.firstChild);
   }
@@ -505,7 +531,7 @@
     const moodSet = state.mood!=="all" ? new Set(MOODS[state.mood]||[]) : null;
     filtered = DATA.filter(m=>{
       if(hidden.has(m.t)) return false;   // titres masqués : jamais affichés
-      if(state.plat!=="all" && !m.plats.includes(state.plat)) return false;
+      if(!m.plats.some(p=>platSel.has(p))) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.minRating && m.rating < state.minRating) return false;
       if(state.yearMin && m.year < state.yearMin) return false;
@@ -545,7 +571,7 @@
     </article>`;
   }
 
-  const filtersActive = () => state.q || state.plat!=="all" || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.minRating || state.yearMin || state.favOnly;
+  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.minRating || state.yearMin || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
@@ -570,7 +596,7 @@
     updateFavChip(); render();
   }
   function resetFilters(){
-    Object.assign(state,{q:"",plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,favOnly:false});
+    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,favOnly:false});
     $('q').value="";
     $('favToggle').setAttribute('aria-pressed','false');
     updateFilterBtn(); render();
@@ -592,6 +618,15 @@
   });
   const byTitle = t => DATA.find(m=>m.t===t);
 
+  $('platChips').addEventListener('click',e=>{
+    const b=e.target.closest('.chip'); if(!b) return;
+    const p=b.dataset.plat;
+    if(platSel.has(p)){ if(platSel.size===1) return;   // au moins 1 plateforme sélectionnée
+      platSel.delete(p); }
+    else platSel.add(p);
+    savePlatSel(); pressPlats(); render();
+  });
+
   $('favToggle').addEventListener('click',()=>{state.favOnly=!state.favOnly;$('favToggle').setAttribute('aria-pressed',state.favOnly?'true':'false');render();});
   $('q').addEventListener('input',debounce(()=>{state.q=$('q').value;render();},130));
 
@@ -602,7 +637,7 @@
     let n=0;
     for(const m of DATA){
       if(hidden.has(m.t)) continue;
-      if(d.plat!=="all" && !m.plats.includes(d.plat)) continue;
+      if(!m.plats.some(p=>platSel.has(p))) continue;
       if(d.type!=="all" && m.type!==d.type) continue;
       if(d.minRating && m.rating<d.minRating) continue;
       if(d.yearMin && m.year<d.yearMin) continue;
@@ -615,7 +650,7 @@
     return n;
   }
   function updateFilterBtn(){
-    const n=[state.plat!=="all",state.type!=="all",state.genre!=="all",state.mood!=="all",state.minRating>0,state.yearMin>0].filter(Boolean).length;
+    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.minRating>0,state.yearMin>0].filter(Boolean).length;
     $('openFilters').innerHTML = `☰ Filtres${n?` <span class="fb">${n}</span>`:''}`;
   }
   const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
@@ -626,8 +661,6 @@
       <div class="setup">
         <div class="lbl">Type</div>
         ${chips('fType',[["all","Tout"],["film","Films"],["serie","Séries"]],draft.type)}
-        <div class="lbl">Plateforme</div>
-        ${chips('fPlat',[["all","Toutes"],["netflix","Netflix"],["prime","Prime Video"],["disney","Disney+"]],draft.plat)}
         <div class="lbl">Humeur</div>
         ${chips('fMood',[["all","✨ Toutes"],["frissons","😱 Frissons"],["rire","😂 Rire"],["action","💥 Action"],["emotion","😢 Émotion"],["romance","❤️ Romance"],["famille","👨‍👩‍👧 Famille"],["cerveau","🧠 Cerveau"],["evasion","🌍 Évasion"]],draft.mood)}
         <div class="lbl">Genre</div>
@@ -645,17 +678,16 @@
       </div>`;
     $('fClose').onclick=()=>closeOv('filters');
     $('fType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.type=b.dataset.v;renderFilters();};
-    $('fPlat').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.plat=b.dataset.v;renderFilters();};
     $('fMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.mood=b.dataset.v;renderFilters();};
     $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
     $('fYear').onchange=e=>{draft.yearMin=+e.target.value;applyCountLabel();};
     $('fRating').onchange=e=>{draft.minRating=+e.target.value;applyCountLabel();};
     $('fSort').onchange=e=>{draft.sort=e.target.value;};
-    $('fReset').onclick=()=>{ Object.assign(draft,{plat:"all",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating"}); renderFilters(); };
+    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating"}); renderFilters(); };
     $('fApply').onclick=()=>{ Object.assign(state,draft); updateFilterBtn(); render(); closeOv('filters'); };
   }
   function openFilters(){
-    draft={plat:state.plat,type:state.type,genre:state.genre,mood:state.mood,minRating:state.minRating,yearMin:state.yearMin,sort:state.sort};
+    draft={type:state.type,genre:state.genre,mood:state.mood,minRating:state.minRating,yearMin:state.yearMin,sort:state.sort};
     renderFilters(); openOv('filters');
   }
   $('openFilters').addEventListener('click',openFilters);
@@ -677,10 +709,15 @@
   function openOv(id){$(id).classList.add('show');}
   function closeOv(id){ $(id).classList.remove('show'); if(id==='swipe'){ updateFavChip(); render(); } }   // resync grille/cœurs au retour du Swipe
   document.querySelectorAll('.ov .back[data-close]').forEach(b=>b.addEventListener('click',e=>closeOv(e.target.closest('.ov').id)));
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const ov=document.querySelector('.ov.show'); if(ov) closeOv(ov.id); } });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){
+    if($('zoom').classList.contains('show')){ closeOv('zoom'); return; }   // le zoom est toujours au-dessus
+    const ov=document.querySelector('.ov.show'); if(ov) closeOv(ov.id);
+  } });
+  $('zoomImg').addEventListener('click',()=>closeOv('zoom'));
 
   /* ---- bande-annonce (recherche YouTube FR, sans clé) ---- */
   const ytUrl = m => `https://www.youtube.com/results?search_query=${encodeURIComponent(`${m.t} ${m.year||''} bande annonce VF`)}`;
+  const ggUrl = (m,director) => `https://www.google.com/search?q=${encodeURIComponent([m.t, m.type==="film"?"film":"série", director||"", m.year||""].filter(Boolean).join(" "))}`;
   const trailerBtn = m => `<a class="watchbtn yt" href="${ytUrl(m)}" target="_blank" rel="noopener">🎬 Bande-annonce (YouTube)</a>`;
   const fmtRuntime = min => { if(!min) return ''; const h=Math.floor(min/60), r=min%60; return h ? `${h}h${r?String(r).padStart(2,'0'):''}` : `${r}min`; };
 
@@ -744,6 +781,7 @@
       <div class="sbody">
         ${genrePills(m)?`<div class="srow">${genrePills(m)}</div>`:''}
         ${trailerBtn(m)}
+        <a class="watchbtn gg" id="sGoogle" href="${ggUrl(m)}" target="_blank" rel="noopener">🔍 Rechercher sur Google</a>
         ${watchBtns(m)}
         <button class="hidebtn" id="sHide">🙈 Ne plus afficher ce titre</button>
       </div>
@@ -766,7 +804,14 @@
         if(d.cast&&d.cast.length) bits.push(`<div class="screw"><span>Avec</span> ${esc(d.cast.join(", "))}</div>`);
         cr.innerHTML=bits.join("");
       }
+      const gg=$('sGoogle'); if(gg && d && d.director) gg.href=ggUrl(m,d.director);   // recherche enrichie du réalisateur/créateur
     });
+    const sp=box.querySelector('.sposter');
+    sp.classList.toggle('zoomable', !!posters[m.t]);
+    sp.onclick=()=>{ const u=posters[m.t]; if(!u) return;
+      $('zoomImg').src=u.replace('/w342','/w780');   // version haute résolution
+      openOv('zoom');
+    };
     $('sFav').onclick=()=>{toggleFav(m.t);$('sFav').textContent=isFav(m.t)?'♥ Dans ma liste':'♡ Ajouter';
       const on=isFav(m.t);
       resultsEl.querySelectorAll(`[data-fav="${cssEsc(m.t)}"]`).forEach(card=>{card.classList.toggle('on',on);card.textContent=on?'♥':'♡';});};
@@ -1126,6 +1171,7 @@
   buildGenres();
   updateFavChip();
   updateFilterBtn();
+  pressPlats();
   render();
   if(tmdbKey){ goLive(false); }
   else setStatus(`${DATA.length} titres (sélection curée) · ⚙️ ajoute une clé TMDB pour le vrai catalogue live FR`);
