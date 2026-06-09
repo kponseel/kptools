@@ -213,6 +213,20 @@
   .watchbtn.yt{background:#ff3d3d;}
   .watchbtn.gg{background:#4285f4;}
 
+  /* ---- profils ---- */
+  #login{z-index:95;}
+  .proflist{display:flex;flex-direction:column;gap:9px;}
+  .profbtn{display:flex;align-items:center;gap:11px;background:var(--bg2);border:1px solid var(--border);color:var(--txt);
+    font-size:15.5px;font-weight:700;padding:10px 13px;border-radius:13px;cursor:pointer;text-align:left;width:100%;}
+  .profbtn.cur{border-color:var(--accent);}
+  .pavatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(120deg,var(--accent),var(--accent2));
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex:0 0 auto;font-size:15px;}
+  .pdel{margin-left:auto;color:var(--dim);font-size:13px;padding:7px 9px;border-radius:8px;}
+  .lginput{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--txt);border-radius:11px;
+    padding:12px;font-size:16px;outline:none;margin-bottom:9px;}
+  .lginput:focus{border-color:var(--accent);}
+  #prof.logged{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:900;}
+
   /* ---- zoom affiche ---- */
   #zoom{z-index:90;}
   .zimg{position:absolute;inset:0;margin:auto;max-width:92vw;max-height:84vh;border-radius:14px;
@@ -291,6 +305,7 @@
       <div>
         <h1>On regarde quoi ?</h1>
       </div>
+      <button id="prof" class="gear" title="Changer d'utilisateur" aria-label="Changer d'utilisateur">👤</button>
       <button id="theme" class="gear" title="Thème Pucinette" aria-label="Changer de thème">🎀</button>
       <button id="gear" class="gear" title="Affiches (clé TMDB)" aria-label="Réglages affiches">⚙️</button>
     </div>
@@ -360,6 +375,10 @@
     <div class="back" data-close></div>
     <img class="zimg" id="zoomImg" alt="Affiche">
   </div>
+  <!-- Profils -->
+  <div class="ov full" id="login" role="dialog" aria-modal="true" aria-label="Choix du profil">
+    <div class="box" id="loginBox"></div>
+  </div>
 
 <script src="data.js"></script>
 <script>
@@ -369,24 +388,29 @@
   let DATA = [], CURATED = [];
 
   const PLAT = {netflix:"Netflix", prime:"Prime Video", disney:"Disney+"};
-  const FAVKEY = "orq_fav_v1";
 
   const $ = id => document.getElementById(id);
   const resultsEl=$('results'), countEl=$('count');
 
-  /* favoris (localStorage) */
-  const HIDEKEY="orq_hidden_v1";
+  /* ---- profils (multi-utilisateurs locaux, max 4) ---- */
+  const PROFKEY="orq_profiles_v1", CURKEY="orq_cur_profile";
+  let profiles=[]; try{ profiles=JSON.parse(localStorage.getItem(PROFKEY)||"[]"); }catch(e){}
+  let curProf=null; try{ curProf=localStorage.getItem(CURKEY)||null; }catch(e){}
+  if(curProf && !profiles.some(p=>p.id===curProf)) curProf=null;
+  const saveProfiles=()=>{ try{localStorage.setItem(PROFKEY,JSON.stringify(profiles));}catch(e){} };
+  const pkey = suf => `orq_p_${curProf}_${suf}`;
+  const curProfile = () => profiles.find(p=>p.id===curProf)||null;
+
+  /* favoris (par profil) */
   let favs = new Set();
-  try{ favs = new Set(JSON.parse(localStorage.getItem(FAVKEY)||"[]")); }catch(e){}
   const isFav = t => favs.has(t);
-  function toggleFav(t){ favs.has(t)?favs.delete(t):favs.add(t); try{localStorage.setItem(FAVKEY,JSON.stringify([...favs]));}catch(e){} updateFavChip(); }
+  function toggleFav(t){ favs.has(t)?favs.delete(t):favs.add(t); try{localStorage.setItem(pkey('fav'),JSON.stringify([...favs]));}catch(e){} updateFavChip(); }
   function updateFavChip(){ $('favToggle').textContent = favs.size ? `❤️ Ma liste (${favs.size})` : "❤️ Ma liste"; }
 
-  /* titres masqués (localStorage) — exclus partout */
+  /* titres masqués (par profil) — exclus partout */
   let hidden = new Set();
-  try{ hidden = new Set(JSON.parse(localStorage.getItem(HIDEKEY)||"[]")); }catch(e){}
   const isHidden = t => hidden.has(t);
-  const saveHidden = () => { try{localStorage.setItem(HIDEKEY,JSON.stringify([...hidden]));}catch(e){} };
+  const saveHidden = () => { try{localStorage.setItem(pkey('hide'),JSON.stringify([...hidden]));}catch(e){} };
   function addHidden(t){ hidden.add(t); saveHidden(); }
   function removeHidden(t){ hidden.delete(t); saveHidden(); }
   function unhideAll(){
@@ -397,12 +421,9 @@
 
   const state={q:"",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating",view:"grid",favOnly:false};
 
-  /* plateformes sélectionnées (multi, min 1) — défaut : Netflix + Prime */
-  const PLATSEL="orq_platsel_v1";
+  /* plateformes sélectionnées (multi, min 1, par profil) — défaut : Netflix + Prime */
   let platSel=new Set(["netflix","prime"]);
-  try{ const s=JSON.parse(localStorage.getItem(PLATSEL)||"null");
-    if(Array.isArray(s)){ const v=s.filter(p=>PLAT[p]); if(v.length) platSel=new Set(v); } }catch(e){}
-  const savePlatSel=()=>{ try{localStorage.setItem(PLATSEL,JSON.stringify([...platSel]));}catch(e){} };
+  const savePlatSel=()=>{ try{localStorage.setItem(pkey('plats'),JSON.stringify([...platSel]));}catch(e){} };
   function pressPlats(){ $('platChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', platSel.has(c.dataset.plat)?'true':'false')); }
   let filtered=[], draft={};
   const YEARS_MIN=[[0,"Toutes les années"],[2024,"Depuis 2024"],[2023,"Depuis 2023"],[2022,"Depuis 2022"],[2020,"Depuis 2020"],[2015,"Depuis 2015"],[2010,"Depuis 2010"],[2000,"Depuis 2000"]];
@@ -592,7 +613,7 @@
   function clearFavs(){
     if(!favs.size) return;
     if(!confirm("Vider toute ta liste de favoris ?")) return;
-    favs.clear(); try{localStorage.setItem(FAVKEY,JSON.stringify([]));}catch(e){}
+    favs.clear(); try{localStorage.setItem(pkey('fav'),JSON.stringify([]));}catch(e){}
     updateFavChip(); render();
   }
   function resetFilters(){
@@ -711,7 +732,9 @@
   document.querySelectorAll('.ov .back[data-close]').forEach(b=>b.addEventListener('click',e=>closeOv(e.target.closest('.ov').id)));
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){
     if($('zoom').classList.contains('show')){ closeOv('zoom'); return; }   // le zoom est toujours au-dessus
-    const ov=document.querySelector('.ov.show'); if(ov) closeOv(ov.id);
+    const ov=document.querySelector('.ov.show'); if(!ov) return;
+    if(ov.id==='login' && !curProf) return;   // pas de fermeture tant qu'aucun profil n'est choisi
+    closeOv(ov.id);
   } });
   $('zoomImg').addEventListener('click',()=>closeOv('zoom'));
 
@@ -1142,13 +1165,13 @@
         <div class="lbl">Plateformes</div>
         ${Object.entries(pc).filter(([p,v])=>v>0).map(([p,v])=>bar(PLAT[p],v,n)).join("")||'<div class="hint">—</div>'}`;
     }
-    $('statsBox').innerHTML=`<div class="swtop"><h2>📊 Mes goûts</h2><button class="close" id="stClose">✕</button></div><div class="setup">${body}</div>`;
+    const who=curProfile();
+    $('statsBox').innerHTML=`<div class="swtop"><h2>📊 Goûts de ${who?esc(who.name):'…'}</h2><button class="close" id="stClose">✕</button></div><div class="setup">${body}</div>`;
     $('stClose').onclick=()=>closeOv('stats');
   }
   $('openStats').addEventListener('click',()=>{ renderStats(); openOv('stats'); });
 
-  /* ---- thème (Pucinette 🎀 pour Titia) ---- */
-  const THKEY="orq_theme";
+  /* ---- thème (Pucinette 🎀 pour Titia, par profil) ---- */
   function applyTheme(t){
     const on = t==="pucinette";
     document.body.classList.toggle('pucinette', on);
@@ -1158,21 +1181,95 @@
     const emo=document.querySelector('.brand .emo'); if(emo) emo.textContent = on ? '💖' : '🍿';
     const mt=document.querySelector('meta[name="theme-color"]'); if(mt) mt.content = on ? '#ff9ad2' : '#0a0a12';
   }
-  let theme=''; try{ theme=localStorage.getItem(THKEY)||''; }catch(e){}
-  applyTheme(theme);
+  let theme='';
   $('theme').addEventListener('click',()=>{
     theme = theme==="pucinette" ? "" : "pucinette";
-    try{ localStorage.setItem(THKEY,theme); }catch(e){}
+    try{ localStorage.setItem(pkey('theme'),theme); }catch(e){}
     applyTheme(theme);
   });
+
+  /* ---- gestion des profils ---- */
+  function updateProfBtn(){
+    const p=curProfile();
+    $('prof').textContent = p ? p.name[0].toUpperCase() : '👤';
+    $('prof').title = p ? `Profil : ${p.name} (changer)` : "Choisir un profil";
+    $('prof').classList.toggle('logged', !!p);
+  }
+  function loadUserData(){
+    favs=new Set(); hidden=new Set(); platSel=new Set(["netflix","prime"]); theme='';
+    try{ favs=new Set(JSON.parse(localStorage.getItem(pkey('fav'))||"[]")); }catch(e){}
+    try{ hidden=new Set(JSON.parse(localStorage.getItem(pkey('hide'))||"[]")); }catch(e){}
+    try{ const s=JSON.parse(localStorage.getItem(pkey('plats'))||"null");
+      if(Array.isArray(s)){ const v=s.filter(p=>PLAT[p]); if(v.length) platSel=new Set(v); } }catch(e){}
+    try{ theme=localStorage.getItem(pkey('theme'))||''; }catch(e){}
+    applyTheme(theme); updateFavChip(); pressPlats(); updateProfBtn();
+  }
+  function migrateLegacy(id){   // reprend les données d'avant les profils dans le 1er profil créé
+    const map={orq_fav_v1:'fav', orq_hidden_v1:'hide', orq_platsel_v1:'plats', orq_theme:'theme'};
+    try{ for(const [old,suf] of Object.entries(map)){ const v=localStorage.getItem(old);
+      if(v!=null){ localStorage.setItem(`orq_p_${id}_${suf}`,v); localStorage.removeItem(old); } } }catch(e){}
+  }
+  function loginAs(id){
+    curProf=id; try{ localStorage.setItem(CURKEY,id); }catch(e){}
+    loadUserData(); render(); closeOv('login');
+  }
+  function deleteProfile(id){
+    const p=profiles.find(x=>x.id===id); if(!p) return;
+    if(!confirm(`Supprimer le profil ${p.name} et toutes ses données (liste, masqués) ?`)) return;
+    profiles=profiles.filter(x=>x.id!==id); saveProfiles();
+    try{ ['fav','hide','plats','theme'].forEach(s=>localStorage.removeItem(`orq_p_${id}_${s}`)); }catch(e){}
+    if(curProf===id){ curProf=null; try{ localStorage.removeItem(CURKEY); }catch(e){} }
+    renderLogin();
+  }
+  function renderLogin(){
+    const canAdd = profiles.length<4;
+    $('loginBox').innerHTML=`
+      <div class="swtop"><h2>👋 Qui regarde ?</h2>${curProf?'<button class="close" id="lgClose">✕</button>':''}</div>
+      <div class="setup">
+        ${profiles.length?`<div class="lbl">Profils</div><div class="proflist">${profiles.map(p=>`
+          <button class="profbtn ${p.id===curProf?'cur':''}" data-id="${p.id}">
+            <span class="pavatar">${esc(p.name[0].toUpperCase())}</span>${esc(p.name)} · ${p.year}
+            <span class="pdel" data-del="${p.id}" title="Supprimer ce profil">✕</span>
+          </button>`).join("")}</div>`:''}
+        ${canAdd?`
+        <div class="lbl">${profiles.length?'Nouveau profil':'Crée ton profil'}</div>
+        <input id="lgName" class="lginput" type="text" placeholder="Prénom" maxlength="20" autocomplete="given-name">
+        <input id="lgYear" class="lginput" type="number" inputmode="numeric" placeholder="Année de naissance (ex. 1990)" min="1920" max="2025">
+        <button class="start" id="lgGo">C'est parti →</button>`
+        :`<div class="hint">Maximum 4 profils — supprime-en un pour en créer un nouveau.</div>`}
+        <div class="hint">Profils enregistrés sur cet appareil : tu restes connecté·e automatiquement à chaque visite.</div>
+      </div>`;
+    const cl=$('lgClose'); if(cl) cl.onclick=()=>closeOv('login');
+    $('loginBox').querySelectorAll('.profbtn').forEach(b=>b.addEventListener('click',e=>{
+      const del=e.target.closest('.pdel');
+      if(del){ e.stopPropagation(); deleteProfile(del.dataset.del); return; }
+      loginAs(b.dataset.id);
+    }));
+    const go=$('lgGo');
+    if(go) go.onclick=()=>{
+      const name=($('lgName').value||"").trim();
+      const year=+$('lgYear').value;
+      if(!name){ alert("Entre ton prénom 🙂"); return; }
+      if(!year || year<1920 || year>2025){ alert("Année de naissance invalide (ex. 1990)."); return; }
+      const existing=profiles.find(p=>norm(p.name)===norm(name) && p.year===year);
+      if(existing){ loginAs(existing.id); return; }   // même prénom + année = même personne
+      const id=Date.now().toString(36);
+      const first=!profiles.length;
+      profiles.push({id, name, year}); saveProfiles();
+      if(first) migrateLegacy(id);
+      loginAs(id);
+    };
+  }
+  $('prof').addEventListener('click',()=>{ renderLogin(); openOv('login'); });
 
   /* ---- init ---- */
   reindex();
   buildGenres();
-  updateFavChip();
   updateFilterBtn();
-  pressPlats();
+  if(curProf){ loadUserData(); }       // reconnexion automatique
+  else { applyTheme(''); updateFavChip(); pressPlats(); updateProfBtn(); }
   render();
+  if(!curProf){ renderLogin(); openOv('login'); }
   if(tmdbKey){ goLive(false); }
   else setStatus(`${DATA.length} titres (sélection curée) · ⚙️ ajoute une clé TMDB pour le vrai catalogue live FR`);
 
