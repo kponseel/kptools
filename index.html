@@ -389,7 +389,7 @@
     action:["Action","Aventure","Action & Adventure","Crime","Policier","Braquage","Guerre","Guerre & Politique","Super-héros"],
     emotion:["Drame","Biopic"],
     romance:["Romance"],
-    famille:["Famille","Familial","Animation","Enfants"],
+    famille:["Famille","Familial","Enfants"],
     cerveau:["Documentaire","Historique","Histoire","SF","Science-Fiction","Sci-Fi & Fantasy","Mystère"],
     evasion:["Aventure","Fantastique","Fantasy","SF","Science-Fiction","Sci-Fi & Fantasy","Action & Adventure","Western","Super-héros"]
   };
@@ -407,9 +407,12 @@
 
   /* ---- fusion : un même titre dispo sur plusieurs plateformes = une seule fiche ---- */
   const PORDER = {netflix:0, prime:1, disney:2};
+  const EXCLUDED_GENRES = new Set(["Animation"]);   // genres exclus du catalogue
+  const isExcluded = m => m.genre.split(" · ").some(g=>EXCLUDED_GENRES.has(g));
   function mergeCatalog(items){
     const map=new Map();
     for(const m of items){
+      if(isExcluded(m)) continue;   // on écarte les titres au genre exclu (ex. Animation)
       const key = m.id!=null ? `${m.type}|${m.id}` : `${m.type}|${norm(m.t)}`;
       const ex=map.get(key);
       if(ex){
@@ -975,7 +978,7 @@
   /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
   const PROV = {netflix:"8", prime:"9|119", disney:"337"};   // fournisseurs FR (| = OU ; Prime a 2 ids)
   const PAGES = 5;                                  // ~100 films + 100 séries / plateforme
-  const LIVEKEY = "orq_live_v1";
+  const LIVEKEY = "orq_live_v2";   // v2 : exclusion Animation -> force un re-fetch des sources
   let liveTs = 0;
   function ago(ts){
     if(!ts) return "";
