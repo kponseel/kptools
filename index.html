@@ -225,6 +225,7 @@
   .lginput{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--txt);border-radius:11px;
     padding:12px;font-size:16px;outline:none;margin-bottom:9px;}
   .lginput:focus{border-color:var(--accent);}
+  .lginput.upcase{text-transform:uppercase;letter-spacing:.5px;}
   #prof.logged{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:900;}
 
   /* ---- zoom affiche ---- */
@@ -395,6 +396,10 @@
   /* ---- profils (multi-utilisateurs locaux, max 4) ---- */
   const PROFKEY="orq_profiles_v1", CURKEY="orq_cur_profile";
   let profiles=[]; try{ profiles=JSON.parse(localStorage.getItem(PROFKEY)||"[]"); }catch(e){}
+  // migration : tout prénom passe en majuscules sans accents (idempotent)
+  { const up=s=>(s||"").trim().normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase();
+    let _m=false; profiles.forEach(p=>{ const n=up(p.name); if(n!==p.name){ p.name=n; _m=true; } });
+    if(_m){ try{localStorage.setItem(PROFKEY,JSON.stringify(profiles));}catch(e){} } }
   let curProf=null; try{ curProf=localStorage.getItem(CURKEY)||null; }catch(e){}
   if(curProf && !profiles.some(p=>p.id===curProf)) curProf=null;
   const saveProfiles=()=>{ try{localStorage.setItem(PROFKEY,JSON.stringify(profiles));}catch(e){} };
@@ -443,6 +448,7 @@
   const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};};
 
   const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+  const normName = s => (s||"").trim().normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase();   // KEVIN, TITIA, FRANCOIS…
   const esc = s => s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   function initials(t){const p=t.replace(/[^\p{L}\p{N} ]/gu,"").trim().split(/\s+/).filter(Boolean);return ((p[0]?.[0]||"")+(p[1]?.[0]||"")).toUpperCase()||"?";}
   function hueOf(t){let h=0;for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))%360;return h;}
@@ -1233,13 +1239,14 @@
           </button>`).join("")}</div>`:''}
         ${canAdd?`
         <div class="lbl">${profiles.length?'Nouveau profil':'Crée ton profil'}</div>
-        <input id="lgName" class="lginput" type="text" placeholder="Prénom" maxlength="20" autocomplete="given-name">
+        <input id="lgName" class="lginput upcase" type="text" placeholder="PRÉNOM" maxlength="20" autocomplete="given-name" autocapitalize="characters">
         <input id="lgYear" class="lginput" type="number" inputmode="numeric" placeholder="Année de naissance (ex. 1990)" min="1920" max="2025">
         <button class="start" id="lgGo">C'est parti →</button>`
         :`<div class="hint">Maximum 4 profils — supprime-en un pour en créer un nouveau.</div>`}
         <div class="hint">Profils enregistrés sur cet appareil : tu restes connecté·e automatiquement à chaque visite.</div>
       </div>`;
     const cl=$('lgClose'); if(cl) cl.onclick=()=>closeOv('login');
+    const inp=$('lgName'); if(inp) inp.addEventListener('input',()=>{ const p=inp.selectionStart; inp.value=normName(inp.value); try{inp.setSelectionRange(p,p);}catch(e){} });
     $('loginBox').querySelectorAll('.profbtn').forEach(b=>b.addEventListener('click',e=>{
       const del=e.target.closest('.pdel');
       if(del){ e.stopPropagation(); deleteProfile(del.dataset.del); return; }
@@ -1247,11 +1254,11 @@
     }));
     const go=$('lgGo');
     if(go) go.onclick=()=>{
-      const name=($('lgName').value||"").trim();
+      const name=normName($('lgName').value);   // "kévin" -> "KEVIN" : casse/accents unifiés
       const year=+$('lgYear').value;
       if(!name){ alert("Entre ton prénom 🙂"); return; }
       if(!year || year<1920 || year>2025){ alert("Année de naissance invalide (ex. 1990)."); return; }
-      const existing=profiles.find(p=>norm(p.name)===norm(name) && p.year===year);
+      const existing=profiles.find(p=>p.name===name && p.year===year);
       if(existing){ loginAs(existing.id); return; }   // même prénom + année = même personne
       const id=Date.now().toString(36);
       const first=!profiles.length;
