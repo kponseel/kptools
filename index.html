@@ -1259,7 +1259,11 @@
       if(!name){ alert("Entre ton prénom 🙂"); return; }
       if(!year || year<1920 || year>2025){ alert("Année de naissance invalide (ex. 1990)."); return; }
       const existing=profiles.find(p=>p.name===name && p.year===year);
-      if(existing){ loginAs(existing.id); return; }   // même prénom + année = même personne
+      if(existing){   // même prénom + année = profil existant -> on rejoint, après confirmation
+        if(confirm(`Un profil ${name} · ${year} existe déjà.\n\nC'est bien toi ? Tu vas retrouver sa liste et ses préférences.`)) loginAs(existing.id);
+        return;
+      }
+      if(!confirm(`Créer le profil ${name} · ${year} ?`)) return;
       const id=Date.now().toString(36);
       const first=!profiles.length;
       profiles.push({id, name, year}); saveProfiles();
