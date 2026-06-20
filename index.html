@@ -432,7 +432,7 @@
     hidden.clear(); saveHidden(); render();
   }
 
-  const state={q:"",type:"all",genre:"all",mood:"all",lang:"all",yearSel:0,sort:"pop",view:"grid",favOnly:false};
+  const state={q:"",type:"all",genre:"all",mood:"all",lang:[],yearSel:0,sort:"pop",view:"grid",favOnly:false};
 
   /* plateformes sélectionnées (multi, min 1, par profil) — défaut : Netflix + Prime */
   let platSel=new Set(["netflix","prime"]);
@@ -587,7 +587,7 @@
       if(!m.plats.some(p=>platSel.has(p))) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.yearSel && m.year!==state.yearSel) return false;
-      if(state.lang!=="all" && m.lang!==state.lang) return false;
+      if(state.lang.length && !state.lang.includes(m.lang)) return false;
       const gs = m.genre.split(" · ");
       if(state.genre!=="all" && !gs.includes(state.genre)) return false;
       if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
@@ -624,7 +624,7 @@
     </article>`;
   }
 
-  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.lang!=="all" || state.yearSel || state.favOnly;
+  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.lang.length || state.yearSel || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
@@ -649,7 +649,7 @@
     updateFavChip(); render();
   }
   function resetFilters(){
-    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",lang:"all",yearSel:0,favOnly:false});
+    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",lang:[],yearSel:0,favOnly:false});
     $('q').value="";
     $('favToggle').setAttribute('aria-pressed','false');
     updateFilterBtn(); render();
@@ -693,7 +693,7 @@
       if(!m.plats.some(p=>platSel.has(p))) continue;
       if(d.type!=="all" && m.type!==d.type) continue;
       if(d.yearSel && m.year!==d.yearSel) continue;
-      if(d.lang!=="all" && m.lang!==d.lang) continue;
+      if(d.lang.length && !d.lang.includes(m.lang)) continue;
       const gs=m.genre.split(" · ");
       if(d.genre!=="all" && !gs.includes(d.genre)) continue;
       if(moodSet && !gs.some(g=>moodSet.has(g))) continue;
@@ -703,7 +703,7 @@
     return n;
   }
   function updateFilterBtn(){
-    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.lang!=="all",state.yearSel>0].filter(Boolean).length;
+    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.lang.length>0,state.yearSel>0].filter(Boolean).length;
     $('openFilters').innerHTML = `☰ Filtres${n?` <span class="fb">${n}</span>`:''}`;
   }
   const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
@@ -712,6 +712,8 @@
     // langues présentes dans le catalogue, triées par fréquence décroissante
     const langCount={}; DATA.forEach(m=>{ if(m.lang) langCount[m.lang]=(langCount[m.lang]||0)+1; });
     const langOpts=[["all","Toutes"], ...Object.entries(langCount).sort((a,b)=>b[1]-a[1]).map(([c,n])=>[c, `${langLabel(c)} (${n})`])];
+    const langPressed = v => v==="all" ? draft.lang.length===0 : draft.lang.includes(v);
+    const langChips = `<div class="chips" id="fLang">${langOpts.map(([v,l])=>`<button class="chip" data-v="${esc(v)}" aria-pressed="${langPressed(v)}">${l}</button>`).join("")}</div>`;
     $('filtersBox').innerHTML = `
       <div class="swtop"><h2>☰ Filtres</h2><button class="close" id="fClose">✕</button></div>
       <div class="setup">
@@ -719,8 +721,8 @@
         ${chips('fType',[["all","Tout"],["film","Films"],["serie","Séries"]],draft.type)}
         <div class="lbl">Humeur</div>
         ${chips('fMood',[["all","✨ Toutes"],["frissons","😱 Frissons"],["rire","😂 Rire"],["action","💥 Action"],["emotion","😢 Émotion"],["romance","❤️ Romance"],["famille","👨‍👩‍👧 Famille"],["cerveau","🧠 Cerveau"],["evasion","🌍 Évasion"]],draft.mood)}
-        <div class="lbl">Langue VO</div>
-        ${chips('fLang',langOpts,draft.lang)}
+        <div class="lbl">Langue VO <span class="hint">(plusieurs possibles)</span></div>
+        ${langChips}
         <div class="lbl">Genre</div>
         <select id="fGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${draft.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
         <div class="lbl">Année</div>
@@ -735,15 +737,20 @@
     $('fClose').onclick=()=>closeOv('filters');
     $('fType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.type=b.dataset.v;renderFilters();};
     $('fMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.mood=b.dataset.v;renderFilters();};
-    $('fLang').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.lang=b.dataset.v;renderFilters();};
+    $('fLang').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
+      const v=b.dataset.v;
+      if(v==="all") draft.lang=[];
+      else { const i=draft.lang.indexOf(v); if(i>=0) draft.lang.splice(i,1); else draft.lang.push(v); }
+      renderFilters();
+    };
     $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
     $('fYear').onchange=e=>{draft.yearSel=+e.target.value;applyCountLabel();};
     $('fSort').onchange=e=>{draft.sort=e.target.value;};
-    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",lang:"all",yearSel:0,sort:"pop"}); renderFilters(); };
+    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",lang:[],yearSel:0,sort:"pop"}); renderFilters(); };
     $('fApply').onclick=()=>{ Object.assign(state,draft); updateFilterBtn(); render(); closeOv('filters'); };
   }
   function openFilters(){
-    draft={type:state.type,genre:state.genre,mood:state.mood,lang:state.lang,yearSel:state.yearSel,sort:state.sort};
+    draft={type:state.type,genre:state.genre,mood:state.mood,lang:state.lang.slice(),yearSel:state.yearSel,sort:state.sort};
     renderFilters(); openOv('filters');
   }
   $('openFilters').addEventListener('click',openFilters);
