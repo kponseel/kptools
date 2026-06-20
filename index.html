@@ -191,6 +191,13 @@
   .pill.cert{background:transparent;border:1px solid var(--dim);color:var(--txt);font-weight:800;}
   .scredits{padding:0 18px;margin-bottom:14px;display:flex;flex-direction:column;gap:4px;}
   .scredits:empty{display:none;}
+  .rblock{padding:6px 18px 0;margin-bottom:12px;display:flex;flex-direction:column;gap:6px;}
+  .rblock:empty{display:none;}
+  .rline{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;
+    background:var(--bg2);border:1px solid var(--border);border-radius:11px;padding:9px 12px;}
+  .rline .rs{color:var(--dim);font-weight:700;}
+  .rline .rv{color:var(--txt);font-weight:800;}
+  .rline .rv small{font-size:11px;color:var(--dim);font-weight:600;}
   .screw{font-size:13.5px;line-height:1.4;color:var(--txt);}
   .screw span{color:var(--dim);font-weight:700;margin-right:4px;}
   .sbody{padding:4px 18px 4px;}
@@ -771,18 +778,49 @@
     detailCache[k]=null;   // garde anti-doublon le temps de la requête
     try{
       const kind=m.type==="film"?"movie":"tv";
-      const extra=kind==="movie"?"credits,release_dates":"credits,content_ratings";
+      const extra=kind==="movie"?"credits,release_dates,external_ids":"credits,content_ratings,external_ids";
       const d=await tmdb(`/${kind}/${m.id}?language=fr-FR&append_to_response=${extra}`);
       const rt=kind==="movie"? d.runtime : (Array.isArray(d.episode_run_time)?d.episode_run_time[0]:0);
       const cast=(((d.credits&&d.credits.cast)||[]).slice(0,4).map(c=>c.name));
       const director = kind==="movie"
         ? (((d.credits&&d.credits.crew)||[]).find(c=>c.job==="Director")||{}).name||""
         : (d.created_by||[]).map(c=>c.name).slice(0,2).join(", ");
+      const imdbId = (d.external_ids && d.external_ids.imdb_id) || d.imdb_id || "";
       detailCache[k]={ overview:d.overview||"", runtime:rt||0, seasons:kind==="tv"?(d.number_of_seasons||0):0,
-        cast, director, cert:extractCert(d,kind) };
+        cast, director, cert:extractCert(d,kind), imdbId };
       saveDetail();
     }catch(e){ delete detailCache[k]; }   // échec : on n'enregistre rien, nouvelle tentative possible
     return detailCache[k];
+  }
+
+  /* ---- notes externes (Rotten Tomatoes / IMDb / Metacritic) via OMDb, mises en cache ---- */
+  const OMDB_KEY="5050a27d";   // clé OMDb (gratuite, 1000 req/jour)
+  const OCACHE="orq_omdb_v1";
+  let omdbCache={}; try{ omdbCache=JSON.parse(localStorage.getItem(OCACHE)||"{}"); }catch(e){}
+  const saveOmdb=()=>{ try{ localStorage.setItem(OCACHE,JSON.stringify(omdbCache)); }catch(e){} };
+  async function fetchOmdb(imdbId){
+    if(!imdbId || !OMDB_KEY) return null;
+    if(imdbId in omdbCache) return omdbCache[imdbId];
+    try{
+      const r=await fetch(`https://www.omdbapi.com/?i=${encodeURIComponent(imdbId)}&apikey=${encodeURIComponent(OMDB_KEY)}`);
+      const d=await r.json();
+      if(d && d.Response==="True"){
+        const out={};
+        (d.Ratings||[]).forEach(x=>{
+          if(/Rotten/.test(x.Source)) out.rt=x.Value;             // ex "94%"
+          else if(/Metacritic/.test(x.Source)) out.mc=x.Value;     // ex "84/100"
+        });
+        if(d.imdbRating && d.imdbRating!=="N/A") out.imdb=`${d.imdbRating}/10`;
+        if(d.imdbVotes && d.imdbVotes!=="N/A") out.imdbVotes=d.imdbVotes;
+        omdbCache[imdbId]=out; saveOmdb();
+      } else if(d && d.Error==="Invalid API key!"){
+        // clé non encore activée : on ne fige rien, ça réessaiera plus tard
+        return null;
+      } else {
+        omdbCache[imdbId]=null; saveOmdb();   // titre sans données externes
+      }
+    }catch(e){ return null; }
+    return omdbCache[imdbId];
   }
 
   /* ---- détail (bottom sheet) ---- */
@@ -797,10 +835,11 @@
         <div class="sposter" data-poster style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span></div>
         <div class="sheadinfo">
           <h3>${esc(m.t)}</h3>
-          <div class="smeta">${m.rating>0?`★ ${m.rating.toFixed(1)}/10 · `:''}${metaLine(m)}<span id="sextra"></span></div>
+          <div class="smeta">${metaLine(m)}<span id="sextra"></span></div>
           <div class="srow">${platPills(m)}<span id="scertwrap"></span></div>
         </div>
       </div>
+      <div class="rblock" id="srt">${m.rating>0?`<div class="rline"><span class="rs">🎬 TMDB</span><span class="rv">★ ${m.rating.toFixed(1)}/10</span></div>`:''}</div>
       ${live?`<div class="ssyn" id="ssyn">Chargement du résumé…</div><div class="scredits" id="scredits"></div>`:''}
       <div class="sbody">
         ${genrePills(m)?`<div class="srow">${genrePills(m)}</div>`:''}
@@ -829,6 +868,15 @@
         cr.innerHTML=bits.join("");
       }
       const gg=$('sGoogle'); if(gg && d && d.director) gg.href=ggUrl(m,d.director);   // recherche enrichie du réalisateur/créateur
+      if(d && d.imdbId) fetchOmdb(d.imdbId).then(rats=>{
+        if(box.dataset.cur!==uidOf(m)) return;
+        const rb=$('srt'); if(!rb||!rats) return;
+        const rows=[];
+        if(rats.rt)   rows.push(`<div class="rline"><span class="rs">🍅 Rotten Tomatoes</span><span class="rv">${esc(rats.rt)}</span></div>`);
+        if(rats.imdb) rows.push(`<div class="rline"><span class="rs">⭐ IMDb</span><span class="rv">${esc(rats.imdb)}${rats.imdbVotes?` <small>(${esc(rats.imdbVotes)} votes)</small>`:''}</span></div>`);
+        if(rats.mc)   rows.push(`<div class="rline"><span class="rs">📊 Metacritic</span><span class="rv">${esc(rats.mc)}</span></div>`);
+        if(rows.length) rb.insertAdjacentHTML('beforeend', rows.join(""));
+      });
     });
     const sp=box.querySelector('.sposter');
     sp.classList.toggle('zoomable', !!posters[m.t]);
