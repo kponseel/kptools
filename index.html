@@ -432,7 +432,7 @@
     hidden.clear(); saveHidden(); render();
   }
 
-  const state={q:"",type:"all",genre:"all",mood:"all",lang:[],yearSel:0,sort:"pop",view:"grid",favOnly:false};
+  const state={q:"",type:"all",genre:"all",mood:"all",lang:[],yearSel:0,minRating:0,sort:"pop",view:"grid",favOnly:false};
 
   /* plateformes sélectionnées (multi, min 1, par profil) — défaut : Netflix + Prime */
   let platSel=new Set(["netflix","prime"]);
@@ -588,6 +588,7 @@
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.yearSel && m.year!==state.yearSel) return false;
       if(state.lang.length && !state.lang.includes(m.lang)) return false;
+      if(state.minRating && (!m.rating || m.rating < state.minRating)) return false;
       const gs = m.genre.split(" · ");
       if(state.genre!=="all" && !gs.includes(state.genre)) return false;
       if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
@@ -624,7 +625,7 @@
     </article>`;
   }
 
-  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.lang.length || state.yearSel || state.favOnly;
+  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.lang.length || state.yearSel || state.minRating || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
@@ -649,7 +650,7 @@
     updateFavChip(); render();
   }
   function resetFilters(){
-    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",lang:[],yearSel:0,favOnly:false});
+    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",lang:[],yearSel:0,minRating:0,favOnly:false});
     $('q').value="";
     $('favToggle').setAttribute('aria-pressed','false');
     updateFilterBtn(); render();
@@ -694,6 +695,7 @@
       if(d.type!=="all" && m.type!==d.type) continue;
       if(d.yearSel && m.year!==d.yearSel) continue;
       if(d.lang.length && !d.lang.includes(m.lang)) continue;
+      if(d.minRating && (!m.rating || m.rating < d.minRating)) continue;
       const gs=m.genre.split(" · ");
       if(d.genre!=="all" && !gs.includes(d.genre)) continue;
       if(moodSet && !gs.some(g=>moodSet.has(g))) continue;
@@ -703,12 +705,12 @@
     return n;
   }
   function updateFilterBtn(){
-    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.lang.length>0,state.yearSel>0].filter(Boolean).length;
+    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.lang.length>0,state.yearSel>0,state.minRating>0].filter(Boolean).length;
     $('openFilters').innerHTML = `☰ Filtres${n?` <span class="fb">${n}</span>`:''}`;
   }
   const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
   function renderFilters(){
-    const chips=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${esc(v)}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+    const chips=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${esc(String(v))}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
     // langues présentes dans le catalogue, triées par fréquence décroissante
     const langCount={}; DATA.forEach(m=>{ if(m.lang) langCount[m.lang]=(langCount[m.lang]||0)+1; });
     const langOpts=[["all","Toutes"], ...Object.entries(langCount).sort((a,b)=>b[1]-a[1]).map(([c,n])=>[c, `${langLabel(c)} (${n})`])];
@@ -727,6 +729,8 @@
         <select id="fGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${draft.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
         <div class="lbl">Année</div>
         <select id="fYear">${YEARS_SEL.map(([v,l])=>`<option value="${v}" ${draft.yearSel==v?'selected':''}>${l}</option>`).join("")}</select>
+        <div class="lbl">Note minimale</div>
+        ${chips('fRating',[[0,"Toutes"],[6,"★ 6+"],[7,"★ 7+"],[7.5,"★ 7,5+"],[8,"★ 8+"],[8.5,"★ 8,5+"],[9,"★ 9+"]],draft.minRating)}
         <div class="lbl">Trier</div>
         <select id="fSort">${[["pop","Populaire"],["year","Plus récent"],["title","A → Z"]].map(([v,l])=>`<option value="${v}" ${draft.sort===v?'selected':''}>${l}</option>`).join("")}</select>
       </div>
@@ -745,12 +749,13 @@
     };
     $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
     $('fYear').onchange=e=>{draft.yearSel=+e.target.value;applyCountLabel();};
+    $('fRating').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.minRating=+b.dataset.v;renderFilters();};
     $('fSort').onchange=e=>{draft.sort=e.target.value;};
-    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",lang:[],yearSel:0,sort:"pop"}); renderFilters(); };
+    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",lang:[],yearSel:0,minRating:0,sort:"pop"}); renderFilters(); };
     $('fApply').onclick=()=>{ Object.assign(state,draft); updateFilterBtn(); render(); closeOv('filters'); };
   }
   function openFilters(){
-    draft={type:state.type,genre:state.genre,mood:state.mood,lang:state.lang.slice(),yearSel:state.yearSel,sort:state.sort};
+    draft={type:state.type,genre:state.genre,mood:state.mood,lang:state.lang.slice(),yearSel:state.yearSel,minRating:state.minRating,sort:state.sort};
     renderFilters(); openOv('filters');
   }
   $('openFilters').addEventListener('click',openFilters);
@@ -959,13 +964,13 @@
   $('surprise').addEventListener('click',spin);
 
   /* ====================== MODE SWIPE (Tinder) ====================== */
-  const sw = {plat:"all", type:"all", genre:"all", year:0, deck:[], idx:0, history:[]};
+  const sw = {plats:[], type:"all", genre:"all", year:0, deck:[], idx:0, history:[]};   // plats=[] = toutes
   const YEARS = [[0,"Toutes (2023-2026)"],[2026,"2026"],[2025,"2025"],[2024,"2024"],[2023,"2023"]];
 
   function swMatches(){
     return DATA.filter(m=>{
       if(hidden.has(m.t)) return false;
-      if(sw.plat!=="all" && !m.plats.includes(sw.plat)) return false;
+      if(sw.plats.length && !m.plats.some(p=>sw.plats.includes(p))) return false;
       if(sw.type!=="all" && m.type!==sw.type) return false;
       if(sw.genre!=="all" && !m.genre.split(" · ").includes(sw.genre)) return false;
       if(sw.year && m.year !== sw.year) return false;
@@ -978,10 +983,12 @@
     $('swipeBox').innerHTML = `
       <div class="swtop"><h2>💘 Mode Swipe</h2><button class="close" id="swClose">✕</button></div>
       <div class="setup">
-        <div class="lbl">Plateforme</div>
+        <div class="lbl">Plateforme <span class="hint">(plusieurs possibles)</span></div>
         <div class="chips" id="swPlat">
-          ${[["all","Toutes"],["netflix","Netflix"],["prime","Prime Video"],["disney","Disney+"]].map(([v,l])=>
-            `<button class="chip" data-plat="${v}" data-pl="${v}" aria-pressed="${sw.plat===v}">${l}</button>`).join("")}
+          ${[["all","Toutes"],["netflix","Netflix"],["prime","Prime Video"],["disney","Disney+"]].map(([v,l])=>{
+            const on = v==="all" ? sw.plats.length===0 : sw.plats.includes(v);
+            return `<button class="chip" data-pl="${v}" aria-pressed="${on}">${l}</button>`;
+          }).join("")}
         </div>
         <div class="lbl">Type</div>
         <div class="chips" id="swType">
@@ -996,7 +1003,12 @@
         <div class="hint">Glisse à droite ❤️ pour garder, à gauche ✕ pour passer.</div>
       </div>`;
     $('swClose').onclick=()=>closeOv('swipe');
-    $('swPlat').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.plat=b.dataset.pl;renderSetup();};
+    $('swPlat').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
+      const v=b.dataset.pl;
+      if(v==="all") sw.plats=[];
+      else { const i=sw.plats.indexOf(v); if(i>=0) sw.plats.splice(i,1); else sw.plats.push(v); }
+      renderSetup();
+    };
     $('swType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.type=b.dataset.ty;renderSetup();};
     $('swGenre').onchange=e=>{sw.genre=e.target.value;renderSetup();};
     $('swYear').onchange=e=>{sw.year=+e.target.value;renderSetup();};
@@ -1050,7 +1062,7 @@
     attachDrag();
   }
 
-  let topCard=null, dragging=false, sx=0, sy=0, dx=0, dy=0;
+  let topCard=null, dragging=false, sx=0, sy=0, dx=0, dy=0, t0=0;
   function attachDrag(){
     const deck=$('deck'); if(!deck)return;
     const slot=deck.querySelector('.swslot:last-child'); if(!slot)return;
@@ -1058,7 +1070,7 @@
     slot.style.touchAction="none";
     slot.addEventListener('pointerdown',onDown);
   }
-  function onDown(e){ dragging=true; sx=e.clientX; sy=e.clientY; topCard.style.transition='none';
+  function onDown(e){ dragging=true; sx=e.clientX; sy=e.clientY; t0=Date.now(); topCard.style.transition='none';
     try{e.currentTarget.setPointerCapture(e.pointerId);}catch(_){}
     e.currentTarget.addEventListener('pointermove',onMove);
     e.currentTarget.addEventListener('pointerup',onUp);
@@ -1070,6 +1082,11 @@
     topCard.querySelector('.stamp.nope').style.opacity=Math.max(0,Math.min(1,-dx/110));
   }
   function onUp(){ if(!dragging)return; dragging=false;
+    // tap court & quasi-immobile -> ouvre la fiche détaillée
+    if(Math.abs(dx)+Math.abs(dy)<12 && (Date.now()-t0)<300){
+      topCard.style.transition=''; topCard.style.transform='';
+      openSheet(sw.deck[sw.idx]); return;
+    }
     if(dx>105) fly('like'); else if(dx<-105) fly('nope');
     else { topCard.style.transition='transform .25s'; topCard.style.transform='';
       topCard.querySelector('.stamp.like').style.opacity=0; topCard.querySelector('.stamp.nope').style.opacity=0; }
@@ -1124,7 +1141,7 @@
       updateFavChip(); render();
     };
   }
-  $('swipeBtn').addEventListener('click',()=>{ renderSetup(); openOv('swipe'); });
+  $('swipeBtn').addEventListener('click',()=>{ if(!sw.plats.length) sw.plats=[...platSel]; renderSetup(); openOv('swipe'); });
 
   /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
   const PROV = { netflix:"8", prime:"9|119", disney:"337" };   // id fournisseur FR (| = OU ; Prime a 2 ids)
