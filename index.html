@@ -424,15 +424,14 @@
     hidden.clear(); saveHidden(); render();
   }
 
-  const state={q:"",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating",view:"grid",favOnly:false};
+  const state={q:"",type:"all",genre:"all",mood:"all",yearSel:0,sort:"pop",view:"grid",favOnly:false};
 
   /* plateformes sélectionnées (multi, min 1, par profil) — défaut : Netflix + Prime */
   let platSel=new Set(["netflix","prime"]);
   const savePlatSel=()=>{ try{localStorage.setItem(pkey('plats'),JSON.stringify([...platSel]));}catch(e){} };
   function pressPlats(){ $('platChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', platSel.has(c.dataset.plat)?'true':'false')); }
   let filtered=[], draft={};
-  const YEARS_MIN=[[0,"Toutes les années"],[2024,"Depuis 2024"],[2023,"Depuis 2023"],[2022,"Depuis 2022"],[2020,"Depuis 2020"],[2015,"Depuis 2015"],[2010,"Depuis 2010"],[2000,"Depuis 2000"]];
-  const RATINGS=[[0,"Toutes notes"],[6,"★ 6+"],[7,"★ 7+"],[7.5,"★ 7,5+"],[8,"★ 8+"],[8.5,"★ 8,5+"],[9,"★ 9+"]];
+  const YEARS_SEL=[[0,"2025 et 2026"],[2026,"2026 seulement"],[2025,"2025 seulement"]];
 
   /* humeurs -> ensembles de genres (couvre le vocabulaire TMDB live ET la sélection curée) */
   const MOODS={
@@ -470,7 +469,8 @@
       const ex=map.get(key);
       if(ex){
         if(!ex.plats.includes(m.plat)) ex.plats.push(m.plat);
-        if(m.rating>ex.rating) ex.rating=m.rating;
+        if((m.pop||0)>(ex.pop||0)) ex.pop=m.pop;
+        if((m.rating||0)>(ex.rating||0)) ex.rating=m.rating;
         if(!ex.poster && m.poster) ex.poster=m.poster;
         if((!ex.genre||ex.genre==="—") && m.genre && m.genre!=="—") ex.genre=m.genre;
         if(!ex.year && m.year) ex.year=m.year;
@@ -560,8 +560,7 @@
       if(hidden.has(m.t)) return false;   // titres masqués : jamais affichés
       if(!m.plats.some(p=>platSel.has(p))) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
-      if(state.minRating && m.rating < state.minRating) return false;
-      if(state.yearMin && m.year < state.yearMin) return false;
+      if(state.yearSel && m.year!==state.yearSel) return false;
       const gs = m.genre.split(" · ");
       if(state.genre!=="all" && !gs.includes(state.genre)) return false;
       if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
@@ -569,16 +568,16 @@
       if(q && !(norm(m.t).includes(q)||norm(m.genre).includes(q))) return false;
       return true;
     });
-    if(state.sort==="rating") filtered.sort((a,b)=>b.rating-a.rating||b.year-a.year);
-    else if(state.sort==="year") filtered.sort((a,b)=>b.year-a.year||b.rating-a.rating);
-    else filtered.sort((a,b)=>a.t.localeCompare(b.t,'fr'));
+    if(state.sort==="year") filtered.sort((a,b)=>b.year-a.year||(b.pop||0)-(a.pop||0));
+    else if(state.sort==="title") filtered.sort((a,b)=>a.t.localeCompare(b.t,'fr'));
+    else filtered.sort((a,b)=>(b.pop||0)-(a.pop||0)||b.year-a.year);   // défaut : populaire
   }
 
   function tileHTML(m){
     return `<article class="tile" data-t="${esc(m.t)}" data-uid="${esc(uidOf(m))}" data-poster style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
       <span class="pdots">${m.plats.map(p=>`<span class="pdot ${p}"></span>`).join("")}</span>
-      <span class="badge-rate">★ ${m.rating.toFixed(1)}</span>
+      ${m.rating>0?`<span class="badge-rate">★ ${m.rating.toFixed(1)}</span>`:''}
       <button class="fav ${isFav(m.t)?'on':''}" data-fav="${esc(m.t)}" aria-label="Ajouter à ma liste">${isFav(m.t)?'♥':'♡'}</button>
       <span class="cap"><span class="ct">${esc(m.t)}</span><span class="cm">${metaLine(m)}</span></span>
     </article>`;
@@ -587,7 +586,7 @@
     return `<article class="card" data-t="${esc(m.t)}" data-uid="${esc(uidOf(m))}" style="--g:${grad(m.t)}">
       <div class="mini" data-t="${esc(m.t)}" data-poster><span class="wm">${initials(m.t)}</span></div>
       <div class="info">
-        <div class="tl"><h2>${esc(m.t)}</h2><span class="rt">★ ${m.rating.toFixed(1)}</span></div>
+        <div class="tl"><h2>${esc(m.t)}</h2>${m.rating>0?`<span class="rt">★ ${m.rating.toFixed(1)}</span>`:''}</div>
         <div class="meta">${[metaLine(m), (m.genre&&m.genre!=="—")?esc(m.genre):null].filter(Boolean).join(" · ")}</div>
         <div class="msyn" data-syn></div>
         <div class="tags">
@@ -598,7 +597,7 @@
     </article>`;
   }
 
-  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.minRating || state.yearMin || state.favOnly;
+  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.yearSel || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
@@ -623,7 +622,7 @@
     updateFavChip(); render();
   }
   function resetFilters(){
-    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,favOnly:false});
+    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",yearSel:0,favOnly:false});
     $('q').value="";
     $('favToggle').setAttribute('aria-pressed','false');
     updateFilterBtn(); render();
@@ -666,8 +665,7 @@
       if(hidden.has(m.t)) continue;
       if(!m.plats.some(p=>platSel.has(p))) continue;
       if(d.type!=="all" && m.type!==d.type) continue;
-      if(d.minRating && m.rating<d.minRating) continue;
-      if(d.yearMin && m.year<d.yearMin) continue;
+      if(d.yearSel && m.year!==d.yearSel) continue;
       const gs=m.genre.split(" · ");
       if(d.genre!=="all" && !gs.includes(d.genre)) continue;
       if(moodSet && !gs.some(g=>moodSet.has(g))) continue;
@@ -677,7 +675,7 @@
     return n;
   }
   function updateFilterBtn(){
-    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.minRating>0,state.yearMin>0].filter(Boolean).length;
+    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.yearSel>0].filter(Boolean).length;
     $('openFilters').innerHTML = `☰ Filtres${n?` <span class="fb">${n}</span>`:''}`;
   }
   const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
@@ -693,11 +691,9 @@
         <div class="lbl">Genre</div>
         <select id="fGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${draft.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
         <div class="lbl">Année</div>
-        <select id="fYear">${YEARS_MIN.map(([v,l])=>`<option value="${v}" ${draft.yearMin==v?'selected':''}>${l}</option>`).join("")}</select>
-        <div class="lbl">Note minimale</div>
-        <select id="fRating">${RATINGS.map(([v,l])=>`<option value="${v}" ${draft.minRating==v?'selected':''}>${l}</option>`).join("")}</select>
+        <select id="fYear">${YEARS_SEL.map(([v,l])=>`<option value="${v}" ${draft.yearSel==v?'selected':''}>${l}</option>`).join("")}</select>
         <div class="lbl">Trier</div>
-        <select id="fSort">${[["rating","Note ↓"],["year","Plus récent"],["title","A → Z"]].map(([v,l])=>`<option value="${v}" ${draft.sort===v?'selected':''}>${l}</option>`).join("")}</select>
+        <select id="fSort">${[["pop","Populaire"],["year","Plus récent"],["title","A → Z"]].map(([v,l])=>`<option value="${v}" ${draft.sort===v?'selected':''}>${l}</option>`).join("")}</select>
       </div>
       <div class="fbar">
         <button class="ghost" id="fReset">Réinitialiser</button>
@@ -707,14 +703,13 @@
     $('fType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.type=b.dataset.v;renderFilters();};
     $('fMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.mood=b.dataset.v;renderFilters();};
     $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
-    $('fYear').onchange=e=>{draft.yearMin=+e.target.value;applyCountLabel();};
-    $('fRating').onchange=e=>{draft.minRating=+e.target.value;applyCountLabel();};
+    $('fYear').onchange=e=>{draft.yearSel=+e.target.value;applyCountLabel();};
     $('fSort').onchange=e=>{draft.sort=e.target.value;};
-    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",minRating:0,yearMin:0,sort:"rating"}); renderFilters(); };
+    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",yearSel:0,sort:"pop"}); renderFilters(); };
     $('fApply').onclick=()=>{ Object.assign(state,draft); updateFilterBtn(); render(); closeOv('filters'); };
   }
   function openFilters(){
-    draft={type:state.type,genre:state.genre,mood:state.mood,minRating:state.minRating,yearMin:state.yearMin,sort:state.sort};
+    draft={type:state.type,genre:state.genre,mood:state.mood,yearSel:state.yearSel,sort:state.sort};
     renderFilters(); openOv('filters');
   }
   $('openFilters').addEventListener('click',openFilters);
@@ -802,7 +797,7 @@
         <div class="sposter" data-poster style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span></div>
         <div class="sheadinfo">
           <h3>${esc(m.t)}</h3>
-          <div class="smeta">★ ${m.rating.toFixed(1)}/10 · ${metaLine(m)}<span id="sextra"></span></div>
+          <div class="smeta">${m.rating>0?`★ ${m.rating.toFixed(1)}/10 · `:''}${metaLine(m)}<span id="sextra"></span></div>
           <div class="srow">${platPills(m)}<span id="scertwrap"></span></div>
         </div>
       </div>
@@ -853,7 +848,7 @@
   /* ---- roulette ---- */
   function rouletteCard(m,spinning){
     return `<div class="${spinning?'spinning':''}">
-      <div class="rhead" style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span><span class="rrate">★ ${m.rating.toFixed(1)}</span></div>
+      <div class="rhead" style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span>${m.rating>0?`<span class="rrate">★ ${m.rating.toFixed(1)}</span>`:''}</div>
       <div class="rbody">
         <div class="rkicker">${spinning?'On tire au sort…':'Ce soir, vous regardez'}</div>
         <h3>${esc(m.t)}</h3>
@@ -883,7 +878,7 @@
 
   /* ====================== MODE SWIPE (Tinder) ====================== */
   const sw = {plat:"all", type:"all", genre:"all", year:0, deck:[], idx:0, history:[]};
-  const YEARS = [[0,"Toutes les années"],[2000,"Après 2000"],[2010,"Après 2010"],[2015,"Après 2015"],[2020,"Après 2020"]];
+  const YEARS = [[0,"2025 et 2026"],[2026,"2026 seulement"]];
 
   function swMatches(){
     return DATA.filter(m=>{
@@ -938,7 +933,7 @@
     return `<div class="swcard" style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
       <div class="stamp like">J'AIME</div><div class="stamp nope">PASSER</div>
-      <div class="top">${platPills(m)}<span class="rate">★ ${m.rating.toFixed(1)}</span></div>
+      <div class="top">${platPills(m)}${m.rating>0?`<span class="rate">★ ${m.rating.toFixed(1)}</span>`:''}</div>
       <div class="cap">
         <h3>${esc(m.t)}</h3>
         <div class="m">${metaLine(m)}</div>
@@ -1050,12 +1045,10 @@
   $('swipeBtn').addEventListener('click',()=>{ renderSetup(); openOv('swipe'); });
 
   /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
-  const PROV = {            // id fournisseur FR (| = OU ; Prime a 2 ids) + nb de pages (20 résultats/page) par type
-    netflix:{id:"8",     pages:10},   // ~200 films + 200 séries visés
-    prime:  {id:"9|119", pages:10},
-    disney: {id:"337",   pages:5}     // ~100 conservé
-  };
-  const LIVEKEY = "orq_live_v3";   // v3 : catalogue élargi + exclusion Horreur -> force un re-fetch des sources
+  const PROV = { netflix:"8", prime:"9|119", disney:"337" };   // id fournisseur FR (| = OU ; Prime a 2 ids)
+  const DATE_FROM="2025-01-01", DATE_TO="2026-12-31";          // catalogue 2025 → 2026
+  const MAXPAGES=30;                                           // plafond de pagination (20 titres/page) ; on s'arrête plus tôt si la source est épuisée
+  const LIVEKEY = "orq_live_v4";   // v4 : catalogue 2025-2026 complet, tri popularité, sans note -> force un re-fetch
   let liveTs = 0;
   function ago(ts){
     if(!ts) return "";
@@ -1079,13 +1072,15 @@
     const [mv,tv] = await Promise.all([tmdb('/genre/movie/list?language=fr-FR'), tmdb('/genre/tv/list?language=fr-FR')]);
     const map={}; [...(mv.genres||[]),...(tv.genres||[])].forEach(g=>map[g.id]=g.name); return map;
   }
-  async function fetchKind(prov, kind, pages){ // kind: 'movie' | 'tv'
-    const votes = kind==='movie' ? 120 : 60;   // seuil de votes abaissé pour atteindre le volume voulu
+  async function fetchKind(prov, kind){ // kind: 'movie' | 'tv' — pagination auto, tout le catalogue 2025-2026
+    const df = kind==='movie' ? 'primary_release_date' : 'first_air_date';
+    const base = `/discover/${kind}?language=fr-FR&watch_region=FR&with_watch_providers=${prov}&with_watch_monetization_types=flatrate&sort_by=popularity.desc&${df}.gte=${DATE_FROM}&${df}.lte=${DATE_TO}`;
+    const first = await tmdb(base+'&page=1').catch(()=>({results:[],total_pages:0}));
+    const total = Math.min(first.total_pages||1, MAXPAGES);
     const reqs=[];
-    for(let p=1;p<=pages;p++){
-      reqs.push(tmdb(`/discover/${kind}?language=fr-FR&watch_region=FR&with_watch_providers=${prov}&with_watch_monetization_types=flatrate&sort_by=vote_average.desc&vote_count.gte=${votes}&page=${p}`).catch(()=>({results:[]})));
-    }
-    return (await Promise.all(reqs)).flatMap(pg=>pg.results||[]);
+    for(let p=2;p<=total;p++) reqs.push(tmdb(base+'&page='+p).catch(()=>({results:[]})));
+    const rest = await Promise.all(reqs);
+    return [first, ...rest].flatMap(pg=>pg.results||[]);
   }
   function normalize(r, kind, plat, gmap){
     const title = kind==='movie' ? r.title : r.name;
@@ -1094,19 +1089,20 @@
     const genre = (r.genre_ids||[]).map(id=>gmap[id]).filter(Boolean).slice(0,2).join(" · ") || "—";
     return { t:title, plat, type: kind==='movie'?'film':'serie',
       rating: Math.round((r.vote_average||0)*10)/10,
+      pop: Math.round((r.popularity||0)*10)/10,
       year: date ? +date.slice(0,4) : 0,
       genre, id: r.id,
       poster: r.poster_path ? "https://image.tmdb.org/t/p/w342"+r.poster_path : "" };
   }
   async function fetchLiveCatalog(){
     const gmap = await fetchGenres();
-    const jobs = Object.entries(PROV).map(([plat,cfg])=>(async()=>{
-      const [mv,tv] = await Promise.all([fetchKind(cfg.id,'movie',cfg.pages), fetchKind(cfg.id,'tv',cfg.pages)]);
+    const jobs = Object.entries(PROV).map(([plat,id])=>(async()=>{
+      const [mv,tv] = await Promise.all([fetchKind(id,'movie'), fetchKind(id,'tv')]);
       const acc=[];
       [['movie',mv],['tv',tv]].forEach(([kind,arr])=>{
         const seen=new Set();
         arr.forEach(r=>{ if(seen.has(r.id))return; seen.add(r.id);
-          const n=normalize(r,kind,plat,gmap); if(n && n.rating>0) acc.push(n); });
+          const n=normalize(r,kind,plat,gmap); if(n) acc.push(n); });   // tout le catalogue, sans filtre de note
       });
       return acc;
     })());
@@ -1128,7 +1124,7 @@
     DATA.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
     reindex(); buildGenres(); updateFilterBtn(); render();
     const cnt=p=>DATA.filter(m=>m.plats.includes(p)).length;
-    setStatus(`Catalogue live · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · màj ${ago(liveTs)}`);
+    setStatus(`Catalogue 2025-2026 · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · màj ${ago(liveTs)}`);
     $('refresh').hidden=false;
     return true;
   }
@@ -1150,7 +1146,8 @@
       body=`<div class="swend"><div class="big">📊</div><h3>Pas encore de goûts</h3><p>Like des titres (❤️ ou 💘 Mode Swipe) pour voir tes préférences ici.</p></div>`;
     } else {
       const n=items.length;
-      const avg=(items.reduce((s,m)=>s+(m.rating||0),0)/n).toFixed(1);
+      const rated=items.filter(m=>m.rating>0);
+      const avg=rated.length?(rated.reduce((s,m)=>s+m.rating,0)/rated.length).toFixed(1):null;   // moyenne sur titres notés
       const films=items.filter(m=>m.type==='film').length, series=n-films;
       const gc={}; items.forEach(m=>m.genre.split(" · ").forEach(g=>{ if(g&&g!=="—") gc[g]=(gc[g]||0)+1; }));
       const topG=Object.entries(gc).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -1162,7 +1159,7 @@
       body=`
         <div class="statgrid">
           <div class="statcard"><div class="num">${n}</div><div class="cap">favoris</div></div>
-          <div class="statcard"><div class="num">★ ${avg}</div><div class="cap">note moyenne</div></div>
+          ${avg?`<div class="statcard"><div class="num">★ ${avg}</div><div class="cap">note moyenne</div></div>`:''}
           <div class="statcard"><div class="num">${films}/${series}</div><div class="cap">films / séries</div></div>
         </div>
         ${topMood?`<div class="domood">Ton humeur n°1 : <span>${MOODLABEL[topMood[0]]}</span></div>`:''}
