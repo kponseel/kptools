@@ -432,7 +432,7 @@
     hidden.clear(); saveHidden(); render();
   }
 
-  const state={q:"",type:"all",genre:"all",mood:"all",origin:"all",yearSel:0,sort:"pop",view:"grid",favOnly:false};
+  const state={q:"",type:"all",genre:"all",mood:"all",lang:"all",yearSel:0,sort:"pop",view:"grid",favOnly:false};
 
   /* plateformes sélectionnées (multi, min 1, par profil) — défaut : Netflix + Prime */
   let platSel=new Set(["netflix","prime"]);
@@ -465,23 +465,22 @@
   const genrePills = m => m.genre.split(" · ").filter(g=>g&&g!=="—").map(g=>`<span class="pill">${esc(g)}</span>`).join("");
   const platPills = m => m.plats.map(p=>`<span class="pill plat ${p}">${PLAT[p]}</span>`).join("");
 
-  /* ---- origine géographique (continent), via origin_country (séries) ou original_language (films) ---- */
-  const CONT = {am:"🌎 Amérique", eu:"🇪🇺 Europe", as:"🌏 Asie", af:"🌍 Afrique / M-O", oc:"🇦🇺 Océanie"};
-  const C_BY_CC = {   // pays -> continent (priorité quand TMDB renvoie origin_country)
-    US:"am",CA:"am",MX:"am",BR:"am",AR:"am",CL:"am",CO:"am",PE:"am",UY:"am",VE:"am",EC:"am",BO:"am",PY:"am",CR:"am",CU:"am",DO:"am",GT:"am",HN:"am",NI:"am",PA:"am",SV:"am",PR:"am",JM:"am",HT:"am",TT:"am",
-    FR:"eu",GB:"eu",DE:"eu",IT:"eu",ES:"eu",PT:"eu",NL:"eu",BE:"eu",CH:"eu",AT:"eu",SE:"eu",NO:"eu",DK:"eu",FI:"eu",IS:"eu",IE:"eu",PL:"eu",CZ:"eu",SK:"eu",HU:"eu",RO:"eu",BG:"eu",GR:"eu",RU:"eu",UA:"eu",BY:"eu",RS:"eu",HR:"eu",SI:"eu",LT:"eu",LV:"eu",EE:"eu",MT:"eu",LU:"eu",MD:"eu",MK:"eu",AL:"eu",BA:"eu",ME:"eu",XK:"eu",TR:"eu",CY:"eu",
-    KR:"as",JP:"as",CN:"as",TW:"as",HK:"as",IN:"as",TH:"as",VN:"as",ID:"as",MY:"as",SG:"as",PH:"as",PK:"as",BD:"as",LK:"as",NP:"as",IR:"as",KZ:"as",UZ:"as",AZ:"as",GE:"as",AM:"as",MM:"as",KH:"as",LA:"as",MN:"as",MV:"as",
-    SA:"af",AE:"af",QA:"af",KW:"af",BH:"af",OM:"af",JO:"af",LB:"af",SY:"af",IQ:"af",IL:"af",PS:"af",YE:"af",
-    ZA:"af",NG:"af",KE:"af",ET:"af",EG:"af",MA:"af",DZ:"af",TN:"af",GH:"af",SN:"af",CM:"af",CI:"af",ZW:"af",ZM:"af",UG:"af",TZ:"af",RW:"af",MZ:"af",AO:"af",MG:"af",SD:"af",LY:"af",
-    AU:"oc",NZ:"oc",FJ:"oc",PG:"oc"
+  /* ---- langue VO : table de libellés (code ISO 639-1 -> nom + drapeau dominant) ---- */
+  const LANGS = {
+    en:["🇺🇸","Anglais"], fr:["🇫🇷","Français"], es:["🇪🇸","Espagnol"], pt:["🇵🇹","Portugais"], de:["🇩🇪","Allemand"], it:["🇮🇹","Italien"], nl:["🇳🇱","Néerlandais"],
+    sv:["🇸🇪","Suédois"], no:["🇳🇴","Norvégien"], da:["🇩🇰","Danois"], fi:["🇫🇮","Finnois"], is:["🇮🇸","Islandais"], pl:["🇵🇱","Polonais"], cs:["🇨🇿","Tchèque"],
+    sk:["🇸🇰","Slovaque"], hu:["🇭🇺","Hongrois"], ro:["🇷🇴","Roumain"], bg:["🇧🇬","Bulgare"], el:["🇬🇷","Grec"], ru:["🇷🇺","Russe"], uk:["🇺🇦","Ukrainien"],
+    sr:["🇷🇸","Serbe"], hr:["🇭🇷","Croate"], sl:["🇸🇮","Slovène"], et:["🇪🇪","Estonien"], lv:["🇱🇻","Letton"], lt:["🇱🇹","Lituanien"], sq:["🇦🇱","Albanais"],
+    bs:["🇧🇦","Bosniaque"], mk:["🇲🇰","Macédonien"], mt:["🇲🇹","Maltais"], ga:["🇮🇪","Irlandais"], cy:["🏴󠁧󠁢󠁷󠁬󠁳󠁿","Gallois"], ca:["🏴󠁥󠁳󠁣󠁴󠁿","Catalan"], eu:["🏴󠁥󠁳󠁰󠁶󠁿","Basque"], gl:["🏴󠁥󠁳󠁧󠁡󠁿","Galicien"],
+    tr:["🇹🇷","Turc"], lb:["🇱🇺","Luxembourgeois"],
+    ko:["🇰🇷","Coréen"], ja:["🇯🇵","Japonais"], zh:["🇨🇳","Chinois"], hi:["🇮🇳","Hindi"], ta:["🇮🇳","Tamoul"], te:["🇮🇳","Télougou"], ml:["🇮🇳","Malayalam"],
+    kn:["🇮🇳","Kannada"], bn:["🇧🇩","Bengali"], pa:["🇮🇳","Pendjabi"], mr:["🇮🇳","Marathi"], ur:["🇵🇰","Ourdou"], th:["🇹🇭","Thaï"], vi:["🇻🇳","Vietnamien"],
+    id:["🇮🇩","Indonésien"], ms:["🇲🇾","Malais"], tl:["🇵🇭","Tagalog"], fa:["🇮🇷","Persan"], my:["🇲🇲","Birman"], km:["🇰🇭","Khmer"], lo:["🇱🇦","Lao"],
+    ne:["🇳🇵","Népalais"], si:["🇱🇰","Cinghalais"], mn:["🇲🇳","Mongol"], kk:["🇰🇿","Kazakh"], uz:["🇺🇿","Ouzbek"], az:["🇦🇿","Azéri"], ka:["🇬🇪","Géorgien"], hy:["🇦🇲","Arménien"],
+    ar:["🇸🇦","Arabe"], he:["🇮🇱","Hébreu"], sw:["🇰🇪","Swahili"], am:["🇪🇹","Amharique"], af:["🇿🇦","Afrikaans"], zu:["🇿🇦","Zoulou"], xh:["🇿🇦","Xhosa"],
+    yo:["🇳🇬","Yoruba"], ig:["🇳🇬","Igbo"], ha:["🇳🇬","Haoussa"], so:["🇸🇴","Somali"], mg:["🇲🇬","Malgache"], mi:["🇳🇿","Maori"]
   };
-  const C_BY_LANG = {   // langue -> continent (fallback quand pas d'origin_country, ex. films)
-    en:"am", fr:"eu", de:"eu", it:"eu", es:"eu", pt:"eu", nl:"eu", sv:"eu", no:"eu", da:"eu", fi:"eu", pl:"eu", ru:"eu", uk:"eu", cs:"eu", ro:"eu", hu:"eu", el:"eu", sr:"eu", hr:"eu", sl:"eu", et:"eu", lv:"eu", lt:"eu", is:"eu", ga:"eu", cy:"eu", ca:"eu", eu:"eu", gl:"eu", tr:"eu", bg:"eu", sk:"eu", mk:"eu", sq:"eu", bs:"eu", lb:"eu", mt:"eu",
-    ko:"as", ja:"as", zh:"as", hi:"as", th:"as", vi:"as", id:"as", tl:"as", ms:"as", ta:"as", ml:"as", te:"as", kn:"as", bn:"as", pa:"as", ur:"as", fa:"as", kk:"as", uz:"as", az:"as", ka:"as", hy:"as", my:"as", km:"as", lo:"as", ne:"as", si:"as", dv:"as", mn:"as",
-    ar:"af", he:"af", sw:"af", am:"af", zu:"af", xh:"af", af:"af", yo:"af", ig:"af", ha:"af", so:"af", mg:"af",
-    mi:"oc"
-  };
-  const continentOf = m => (m.origin && C_BY_CC[m.origin]) || (m.lang && C_BY_LANG[m.lang]) || "";
+  const langLabel = code => LANGS[code] ? `${LANGS[code][0]} ${LANGS[code][1]}` : (code?`🌐 ${code.toUpperCase()}`:`🌐 Inconnue`);
 
   /* ---- fusion : un même titre dispo sur plusieurs plateformes = une seule fiche ---- */
   const PORDER = {netflix:0, prime:1, disney:2};
@@ -500,7 +499,6 @@
         if(!ex.poster && m.poster) ex.poster=m.poster;
         if((!ex.genre||ex.genre==="—") && m.genre && m.genre!=="—") ex.genre=m.genre;
         if(!ex.year && m.year) ex.year=m.year;
-        if(!ex.origin && m.origin) ex.origin=m.origin;
         if(!ex.lang && m.lang) ex.lang=m.lang;
       } else { map.set(key, {...m, plats:[m.plat]}); }
     }
@@ -589,7 +587,7 @@
       if(!m.plats.some(p=>platSel.has(p))) return false;
       if(state.type!=="all" && m.type!==state.type) return false;
       if(state.yearSel && m.year!==state.yearSel) return false;
-      if(state.origin!=="all" && continentOf(m)!==state.origin) return false;
+      if(state.lang!=="all" && m.lang!==state.lang) return false;
       const gs = m.genre.split(" · ");
       if(state.genre!=="all" && !gs.includes(state.genre)) return false;
       if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
@@ -626,7 +624,7 @@
     </article>`;
   }
 
-  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.origin!=="all" || state.yearSel || state.favOnly;
+  const filtersActive = () => state.q || state.type!=="all" || state.genre!=="all" || state.mood!=="all" || state.lang!=="all" || state.yearSel || state.favOnly;
   function render(){
     computeFiltered();
     resultsEl.className = "results "+state.view;
@@ -651,7 +649,7 @@
     updateFavChip(); render();
   }
   function resetFilters(){
-    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",origin:"all",yearSel:0,favOnly:false});
+    Object.assign(state,{q:"",type:"all",genre:"all",mood:"all",lang:"all",yearSel:0,favOnly:false});
     $('q').value="";
     $('favToggle').setAttribute('aria-pressed','false');
     updateFilterBtn(); render();
@@ -695,7 +693,7 @@
       if(!m.plats.some(p=>platSel.has(p))) continue;
       if(d.type!=="all" && m.type!==d.type) continue;
       if(d.yearSel && m.year!==d.yearSel) continue;
-      if(d.origin!=="all" && continentOf(m)!==d.origin) continue;
+      if(d.lang!=="all" && m.lang!==d.lang) continue;
       const gs=m.genre.split(" · ");
       if(d.genre!=="all" && !gs.includes(d.genre)) continue;
       if(moodSet && !gs.some(g=>moodSet.has(g))) continue;
@@ -705,12 +703,15 @@
     return n;
   }
   function updateFilterBtn(){
-    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.origin!=="all",state.yearSel>0].filter(Boolean).length;
+    const n=[state.type!=="all",state.genre!=="all",state.mood!=="all",state.lang!=="all",state.yearSel>0].filter(Boolean).length;
     $('openFilters').innerHTML = `☰ Filtres${n?` <span class="fb">${n}</span>`:''}`;
   }
   const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
   function renderFilters(){
-    const chips=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+    const chips=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${esc(v)}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+    // langues présentes dans le catalogue, triées par fréquence décroissante
+    const langCount={}; DATA.forEach(m=>{ if(m.lang) langCount[m.lang]=(langCount[m.lang]||0)+1; });
+    const langOpts=[["all","Toutes"], ...Object.entries(langCount).sort((a,b)=>b[1]-a[1]).map(([c,n])=>[c, `${langLabel(c)} (${n})`])];
     $('filtersBox').innerHTML = `
       <div class="swtop"><h2>☰ Filtres</h2><button class="close" id="fClose">✕</button></div>
       <div class="setup">
@@ -718,8 +719,8 @@
         ${chips('fType',[["all","Tout"],["film","Films"],["serie","Séries"]],draft.type)}
         <div class="lbl">Humeur</div>
         ${chips('fMood',[["all","✨ Toutes"],["frissons","😱 Frissons"],["rire","😂 Rire"],["action","💥 Action"],["emotion","😢 Émotion"],["romance","❤️ Romance"],["famille","👨‍👩‍👧 Famille"],["cerveau","🧠 Cerveau"],["evasion","🌍 Évasion"]],draft.mood)}
-        <div class="lbl">Origine</div>
-        ${chips('fOrig',[["all","Toutes"],["am","🌎 Amérique"],["eu","🇪🇺 Europe"],["as","🌏 Asie"],["af","🌍 Afrique / M-O"],["oc","🇦🇺 Océanie"]],draft.origin)}
+        <div class="lbl">Langue VO</div>
+        ${chips('fLang',langOpts,draft.lang)}
         <div class="lbl">Genre</div>
         <select id="fGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${draft.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
         <div class="lbl">Année</div>
@@ -734,15 +735,15 @@
     $('fClose').onclick=()=>closeOv('filters');
     $('fType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.type=b.dataset.v;renderFilters();};
     $('fMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.mood=b.dataset.v;renderFilters();};
-    $('fOrig').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.origin=b.dataset.v;renderFilters();};
+    $('fLang').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.lang=b.dataset.v;renderFilters();};
     $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
     $('fYear').onchange=e=>{draft.yearSel=+e.target.value;applyCountLabel();};
     $('fSort').onchange=e=>{draft.sort=e.target.value;};
-    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",origin:"all",yearSel:0,sort:"pop"}); renderFilters(); };
+    $('fReset').onclick=()=>{ Object.assign(draft,{type:"all",genre:"all",mood:"all",lang:"all",yearSel:0,sort:"pop"}); renderFilters(); };
     $('fApply').onclick=()=>{ Object.assign(state,draft); updateFilterBtn(); render(); closeOv('filters'); };
   }
   function openFilters(){
-    draft={type:state.type,genre:state.genre,mood:state.mood,origin:state.origin,yearSel:state.yearSel,sort:state.sort};
+    draft={type:state.type,genre:state.genre,mood:state.mood,lang:state.lang,yearSel:state.yearSel,sort:state.sort};
     renderFilters(); openOv('filters');
   }
   $('openFilters').addEventListener('click',openFilters);
@@ -861,7 +862,7 @@
         <div class="sposter" data-poster style="--g:${grad(m.t)}"><span class="wm">${initials(m.t)}</span></div>
         <div class="sheadinfo">
           <h3>${esc(m.t)}</h3>
-          <div class="smeta">${metaLine(m)}<span id="sextra"></span></div>
+          <div class="smeta">${metaLine(m)}${m.lang?` · ${langLabel(m.lang)}`:''}<span id="sextra"></span></div>
           <div class="srow">${platPills(m)}<span id="scertwrap"></span></div>
         </div>
       </div>
@@ -1122,7 +1123,7 @@
   const PROV = { netflix:"8", prime:"9|119", disney:"337" };   // id fournisseur FR (| = OU ; Prime a 2 ids)
   const DATE_FROM="2025-01-01", DATE_TO="2026-12-31";          // catalogue 2025 → 2026
   const MAXPAGES=30;                                           // plafond de pagination (20 titres/page) ; on s'arrête plus tôt si la source est épuisée
-  const LIVEKEY = "orq_live_v5";   // v5 : ajout langue + pays d'origine pour le filtre Origine
+  const LIVEKEY = "orq_live_v6";   // v6 : filtre par langue VO (champ origin retiré) -> re-fetch
   let liveTs = 0;
   function ago(ts){
     if(!ts) return "";
@@ -1167,7 +1168,6 @@
       year: date ? +date.slice(0,4) : 0,
       genre, id: r.id,
       lang: (r.original_language||"").toLowerCase(),
-      origin: (Array.isArray(r.origin_country) && r.origin_country[0]) ? r.origin_country[0].toUpperCase() : "",
       poster: r.poster_path ? "https://image.tmdb.org/t/p/w342"+r.poster_path : "" };
   }
   async function fetchLiveCatalog(){
