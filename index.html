@@ -236,6 +236,20 @@
   .lginput.upcase{text-transform:uppercase;letter-spacing:.5px;}
   #prof.logged{background:linear-gradient(120deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:900;}
 
+  /* ---- bandeau d'installation PWA ---- */
+  .installbar{position:fixed;left:12px;right:12px;bottom:calc(12px + var(--sb));z-index:85;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff;
+    border-radius:14px;padding:11px 12px;display:none;align-items:center;gap:10px;
+    box-shadow:0 12px 30px -10px rgba(0,0,0,.55);animation:ibIn .35s ease-out;}
+  .installbar.show{display:flex;}
+  @keyframes ibIn { from{transform:translateY(110%);opacity:0;} to{transform:none;opacity:1;} }
+  .installbar .ib-emo{font-size:20px;flex:0 0 auto;}
+  .installbar .ib-txt{flex:1;font-size:13px;font-weight:700;line-height:1.3;}
+  .installbar .ib-btn{background:#fff;color:var(--accent2);border:none;padding:8px 13px;
+    border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;flex:0 0 auto;white-space:nowrap;}
+  .installbar .ib-x{background:rgba(255,255,255,.22);color:#fff;border:none;width:30px;height:30px;
+    border-radius:50%;cursor:pointer;font-size:14px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;}
+
   /* ---- zoom affiche ---- */
   #zoom{z-index:90;}
   .zimg{position:absolute;inset:0;margin:auto;max-width:92vw;max-height:84vh;border-radius:14px;
@@ -378,6 +392,13 @@
   <!-- Stats -->
   <div class="ov full" id="stats" role="dialog" aria-modal="true" aria-label="Mes goûts">
     <div class="box" id="statsBox"></div>
+  </div>
+  <!-- Invitation à installer la PWA -->
+  <div class="installbar" id="installBar" role="region" aria-label="Installer l'application">
+    <span class="ib-emo">📲</span>
+    <span class="ib-txt" id="installTxt"></span>
+    <button class="ib-btn" id="installBtn" hidden>Installer</button>
+    <button class="ib-x" id="installX" aria-label="Plus tard">✕</button>
   </div>
   <!-- Zoom affiche -->
   <div class="ov" id="zoom" role="dialog" aria-modal="true" aria-label="Affiche en grand">
@@ -1385,6 +1406,38 @@
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
   }
+
+  /* ---- invitation à installer la PWA ---- */
+  (function(){
+    const INSTKEY="orq_install_dismiss";
+    const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if(isStandalone) return;   // déjà installé : rien à proposer
+    let dismissed=false;
+    try{ const t=+localStorage.getItem(INSTKEY)||0; dismissed = Date.now()-t < 7*24*3600*1000; }catch(e){}
+    if(dismissed) return;
+    let deferred=null;
+    const show = (text, withBtn) => { $('installTxt').textContent=text; $('installBtn').hidden=!withBtn; $('installBar').classList.add('show'); };
+    const hide = () => $('installBar').classList.remove('show');
+    window.addEventListener('beforeinstallprompt', e=>{
+      e.preventDefault(); deferred=e;
+      show("Installe l'app sur ton écran d'accueil", true);
+    });
+    window.addEventListener('appinstalled', ()=>{ deferred=null; hide(); try{localStorage.removeItem(INSTKEY);}catch(e){} });
+    $('installBtn').addEventListener('click', async ()=>{
+      if(!deferred) return;
+      deferred.prompt();
+      try{ await deferred.userChoice; }catch(e){}
+      deferred=null; hide();
+    });
+    $('installX').addEventListener('click', ()=>{
+      try{ localStorage.setItem(INSTKEY, Date.now()); }catch(e){}
+      hide();
+    });
+    if(isIOS){   // iOS Safari/Chrome : pas de beforeinstallprompt -> instructions natives
+      setTimeout(()=>show("Pour installer : Partager → Sur l'écran d'accueil", false), 1500);
+    }
+  })();
 })();
 </script>
 </body>
