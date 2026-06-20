@@ -439,7 +439,7 @@
   const savePlatSel=()=>{ try{localStorage.setItem(pkey('plats'),JSON.stringify([...platSel]));}catch(e){} };
   function pressPlats(){ $('platChips').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed', platSel.has(c.dataset.plat)?'true':'false')); }
   let filtered=[], draft={};
-  const YEARS_SEL=[[0,"2025 et 2026"],[2026,"2026 seulement"],[2025,"2025 seulement"]];
+  const YEARS_SEL=[[0,"Toutes (2023-2026)"],[2026,"2026 seulement"],[2025,"2025 seulement"],[2024,"2024 seulement"],[2023,"2023 seulement"]];
 
   /* humeurs -> ensembles de genres (couvre le vocabulaire TMDB live ET la sélection curée) */
   const MOODS={
@@ -953,7 +953,7 @@
 
   /* ====================== MODE SWIPE (Tinder) ====================== */
   const sw = {plat:"all", type:"all", genre:"all", year:0, deck:[], idx:0, history:[]};
-  const YEARS = [[0,"2025 et 2026"],[2026,"2026 seulement"]];
+  const YEARS = [[0,"Toutes (2023-2026)"],[2026,"2026"],[2025,"2025"],[2024,"2024"],[2023,"2023"]];
 
   function swMatches(){
     return DATA.filter(m=>{
@@ -961,7 +961,7 @@
       if(sw.plat!=="all" && !m.plats.includes(sw.plat)) return false;
       if(sw.type!=="all" && m.type!==sw.type) return false;
       if(sw.genre!=="all" && !m.genre.split(" · ").includes(sw.genre)) return false;
-      if(sw.year && m.year < sw.year) return false;
+      if(sw.year && m.year !== sw.year) return false;
       return true;
     });
   }
@@ -1121,9 +1121,9 @@
 
   /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
   const PROV = { netflix:"8", prime:"9|119", disney:"337" };   // id fournisseur FR (| = OU ; Prime a 2 ids)
-  const DATE_FROM="2025-01-01", DATE_TO="2026-12-31";          // catalogue 2025 → 2026
-  const MAXPAGES=30;                                           // plafond de pagination (20 titres/page) ; on s'arrête plus tôt si la source est épuisée
-  const LIVEKEY = "orq_live_v6";   // v6 : filtre par langue VO (champ origin retiré) -> re-fetch
+  const DATE_FROM="2023-01-01", DATE_TO="2026-12-31";          // catalogue 2023 → 2026
+  const MAXPAGES=50;                                           // plafond de pagination (20 titres/page) ; relevé pour couvrir la fenêtre élargie
+  const LIVEKEY = "orq_live_v7";   // v7 : fenêtre 2023-2026 -> force un re-fetch
   let liveTs = 0;
   function ago(ts){
     if(!ts) return "";
@@ -1147,7 +1147,7 @@
     const [mv,tv] = await Promise.all([tmdb('/genre/movie/list?language=fr-FR'), tmdb('/genre/tv/list?language=fr-FR')]);
     const map={}; [...(mv.genres||[]),...(tv.genres||[])].forEach(g=>map[g.id]=g.name); return map;
   }
-  async function fetchKind(prov, kind){ // kind: 'movie' | 'tv' — pagination auto, tout le catalogue 2025-2026
+  async function fetchKind(prov, kind){ // kind: 'movie' | 'tv' — pagination auto sur la fenêtre 2023-2026
     const df = kind==='movie' ? 'primary_release_date' : 'first_air_date';
     const base = `/discover/${kind}?language=fr-FR&watch_region=FR&with_watch_providers=${prov}&with_watch_monetization_types=flatrate&sort_by=popularity.desc&${df}.gte=${DATE_FROM}&${df}.lte=${DATE_TO}`;
     const first = await tmdb(base+'&page=1').catch(()=>({results:[],total_pages:0}));
@@ -1200,7 +1200,7 @@
     DATA.forEach(m=>{ if(m.poster) posters[m.t]=m.poster; });   // alimente le rendu d'affiches
     reindex(); buildGenres(); updateFilterBtn(); render();
     const cnt=p=>DATA.filter(m=>m.plats.includes(p)).length;
-    setStatus(`Catalogue 2025-2026 · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · màj ${ago(liveTs)}`);
+    setStatus(`Catalogue 2023-2026 · ${DATA.length} titres (Netflix ${cnt('netflix')} · Prime ${cnt('prime')} · Disney+ ${cnt('disney')}) · màj ${ago(liveTs)}`);
     $('refresh').hidden=false;
     return true;
   }
