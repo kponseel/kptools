@@ -286,6 +286,12 @@
     background:linear-gradient(100deg,#ff7a45,var(--accent2));}
   .setup .start:disabled{opacity:.5;}
   .setup .hint{margin-top:10px;text-align:center;font-size:12.5px;color:var(--dim);}
+  .setup .swtoggle{display:flex;align-items:center;gap:10px;margin-top:18px;font-size:14px;cursor:pointer;}
+  .setup .swtoggle input{width:19px;height:19px;accent-color:var(--accent2);flex:none;}
+  .setup .swreset{margin-top:10px;width:100%;background:var(--bg2);color:var(--txt);border:1px solid var(--border);
+    border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;}
+  .swtop .fb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;
+    border-radius:10px;background:var(--accent2);color:#fff;font-size:12px;font-weight:800;vertical-align:2px;}
   /* deck */
   .deck{position:relative;flex:1;margin:4px 0 14px;touch-action:none;}
   .swcard{position:absolute;inset:0;border-radius:20px;overflow:hidden;background:var(--g);
@@ -293,7 +299,10 @@
   .swcard .scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.88) 6%,rgba(0,0,0,.2) 46%,transparent 66%);}
   .swcard .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:96px;font-weight:900;color:rgba(255,255,255,.14);}
   .swcard .top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
-  .swcard .rate{background:rgba(0,0,0,.6);color:var(--gold);font-weight:800;font-size:15px;padding:5px 10px;border-radius:10px;}
+  .swcard .top .plats{display:flex;gap:6px;flex-wrap:wrap;}
+  .swcard .top .rates{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none;}
+  .swcard .rate{background:rgba(0,0,0,.6);color:var(--gold);font-weight:800;font-size:15px;padding:5px 10px;border-radius:10px;white-space:nowrap;}
+  .swcard .rate.tom{color:#ff6a4d;font-size:14px;}
   .swcard .cap{position:absolute;left:16px;right:16px;bottom:16px;}
   .swcard .cap h3{margin:0 0 6px;font-size:26px;font-weight:900;line-height:1.1;text-shadow:0 2px 8px rgba(0,0,0,.6);}
   .swcard .cap .m{font-size:13.5px;color:#e0e0ee;margin-bottom:9px;}
@@ -502,6 +511,23 @@
     yo:["🇳🇬","Yoruba"], ig:["🇳🇬","Igbo"], ha:["🇳🇬","Haoussa"], so:["🇸🇴","Somali"], mg:["🇲🇬","Malgache"], mi:["🇳🇿","Maori"]
   };
   const langLabel = code => LANGS[code] ? `${LANGS[code][0]} ${LANGS[code][1]}` : (code?`🌐 ${code.toUpperCase()}`:`🌐 Inconnue`);
+
+  /* ---- briques de filtres partagées entre le panneau principal et le Mode Swipe ---- */
+  const chipRow=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${esc(String(v))}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
+  const MOOD_OPTS=[["all","✨ Toutes"],["frissons","😱 Frissons"],["rire","😂 Rire"],["action","💥 Action"],["emotion","😢 Émotion"],["romance","❤️ Romance"],["famille","👨‍👩‍👧 Famille"],["cerveau","🧠 Cerveau"],["evasion","🌍 Évasion"]];
+  const RATING_OPTS=[[0,"Toutes"],[6,"★ 6+"],[7,"★ 7+"],[7.5,"★ 7,5+"],[8,"★ 8+"],[8.5,"★ 8,5+"],[9,"★ 9+"]];
+  const TYPE_OPTS=[["all","Tout"],["film","Films"],["serie","Séries"]];
+  /* langues réellement présentes dans le catalogue, triées par fréquence décroissante */
+  function langOptions(){
+    const c={}; DATA.forEach(m=>{ if(m.lang) c[m.lang]=(c[m.lang]||0)+1; });
+    return [["all","Toutes"], ...Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([code,n])=>[code,`${langLabel(code)} (${n})`])];
+  }
+  const langChipsHTML=(id,sel)=>`<div class="chips" id="${id}">${langOptions().map(([v,l])=>{
+    const on = v==="all" ? sel.length===0 : sel.includes(v);
+    return `<button class="chip" data-v="${esc(v)}" aria-pressed="${on}">${l}</button>`;
+  }).join("")}</div>`;
+  /* clic sur une chip de langue : "Toutes" remet à zéro, sinon toggle */
+  function toggleLang(arr,v){ if(v==="all"){ arr.length=0; return arr; } const i=arr.indexOf(v); if(i>=0) arr.splice(i,1); else arr.push(v); return arr; }
 
   /* ---- fusion : un même titre dispo sur plusieurs plateformes = une seule fiche ---- */
   const PORDER = {netflix:0, prime:1, disney:2};
@@ -731,19 +757,15 @@
   }
   const applyCountLabel = () => { const a=$('fApply'); if(a) a.textContent=`Appliquer · ${countMatches(draft)}`; };
   function renderFilters(){
-    const chips=(id,opts,cur)=>`<div class="chips" id="${id}">${opts.map(([v,l])=>`<button class="chip" data-v="${esc(String(v))}" aria-pressed="${cur===v}">${l}</button>`).join("")}</div>`;
-    // langues présentes dans le catalogue, triées par fréquence décroissante
-    const langCount={}; DATA.forEach(m=>{ if(m.lang) langCount[m.lang]=(langCount[m.lang]||0)+1; });
-    const langOpts=[["all","Toutes"], ...Object.entries(langCount).sort((a,b)=>b[1]-a[1]).map(([c,n])=>[c, `${langLabel(c)} (${n})`])];
-    const langPressed = v => v==="all" ? draft.lang.length===0 : draft.lang.includes(v);
-    const langChips = `<div class="chips" id="fLang">${langOpts.map(([v,l])=>`<button class="chip" data-v="${esc(v)}" aria-pressed="${langPressed(v)}">${l}</button>`).join("")}</div>`;
+    const chips=chipRow;
+    const langChips = langChipsHTML('fLang', draft.lang);
     $('filtersBox').innerHTML = `
       <div class="swtop"><h2>☰ Filtres</h2><button class="close" id="fClose">✕</button></div>
       <div class="setup">
         <div class="lbl">Type</div>
-        ${chips('fType',[["all","Tout"],["film","Films"],["serie","Séries"]],draft.type)}
+        ${chips('fType',TYPE_OPTS,draft.type)}
         <div class="lbl">Humeur</div>
-        ${chips('fMood',[["all","✨ Toutes"],["frissons","😱 Frissons"],["rire","😂 Rire"],["action","💥 Action"],["emotion","😢 Émotion"],["romance","❤️ Romance"],["famille","👨‍👩‍👧 Famille"],["cerveau","🧠 Cerveau"],["evasion","🌍 Évasion"]],draft.mood)}
+        ${chips('fMood',MOOD_OPTS,draft.mood)}
         <div class="lbl">Langue VO <span class="hint">(plusieurs possibles)</span></div>
         ${langChips}
         <div class="lbl">Genre</div>
@@ -751,7 +773,7 @@
         <div class="lbl">Année</div>
         <select id="fYear">${YEARS_SEL.map(([v,l])=>`<option value="${v}" ${draft.yearSel==v?'selected':''}>${l}</option>`).join("")}</select>
         <div class="lbl">Note minimale</div>
-        ${chips('fRating',[[0,"Toutes"],[6,"★ 6+"],[7,"★ 7+"],[7.5,"★ 7,5+"],[8,"★ 8+"],[8.5,"★ 8,5+"],[9,"★ 9+"]],draft.minRating)}
+        ${chips('fRating',RATING_OPTS,draft.minRating)}
         <div class="lbl">Trier</div>
         <select id="fSort">${[["pop","Populaire"],["year","Plus récent"],["title","A → Z"]].map(([v,l])=>`<option value="${v}" ${draft.sort===v?'selected':''}>${l}</option>`).join("")}</select>
       </div>
@@ -763,10 +785,7 @@
     $('fType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.type=b.dataset.v;renderFilters();};
     $('fMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;draft.mood=b.dataset.v;renderFilters();};
     $('fLang').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
-      const v=b.dataset.v;
-      if(v==="all") draft.lang=[];
-      else { const i=draft.lang.indexOf(v); if(i>=0) draft.lang.splice(i,1); else draft.lang.push(v); }
-      renderFilters();
+      toggleLang(draft.lang, b.dataset.v); renderFilters();
     };
     $('fGenre').onchange=e=>{draft.genre=e.target.value;applyCountLabel();};
     $('fYear').onchange=e=>{draft.yearSel=+e.target.value;applyCountLabel();};
@@ -985,55 +1004,82 @@
   $('surprise').addEventListener('click',spin);
 
   /* ====================== MODE SWIPE (Tinder) ====================== */
-  const sw = {plats:[], type:"all", genre:"all", year:0, deck:[], idx:0, history:[]};   // plats=[] = toutes
+  const sw = {plats:[], type:"all", mood:"all", genre:"all", lang:[], year:0, minRating:0, skipFav:false,
+              seeded:false, deck:[], idx:0, history:[]};   // plats=[] / lang=[] = toutes
   const YEARS = [[0,"Toutes (2023-2026)"],[2026,"2026"],[2025,"2025"],[2024,"2024"],[2023,"2023"]];
 
   function swMatches(){
+    const moodSet = sw.mood!=="all" ? new Set(MOODS[sw.mood]||[]) : null;
     return DATA.filter(m=>{
       if(hidden.has(m.t)) return false;
       if(sw.plats.length && !m.plats.some(p=>sw.plats.includes(p))) return false;
       if(sw.type!=="all" && m.type!==sw.type) return false;
-      if(sw.genre!=="all" && !m.genre.split(" · ").includes(sw.genre)) return false;
       if(sw.year && m.year !== sw.year) return false;
+      if(sw.lang.length && !sw.lang.includes(m.lang)) return false;
+      if(sw.minRating && (!m.rating || m.rating < sw.minRating)) return false;
+      if(sw.skipFav && isFav(m.t)) return false;
+      const gs = m.genre.split(" · ");
+      if(sw.genre!=="all" && !gs.includes(sw.genre)) return false;
+      if(moodSet && !gs.some(g=>moodSet.has(g))) return false;
       return true;
     });
   }
+  const swFilterCount = () => [sw.type!=="all", sw.mood!=="all", sw.genre!=="all", sw.lang.length>0,
+                               sw.year>0, sw.minRating>0, sw.skipFav].filter(Boolean).length;
 
   function renderSetup(){
     const n = swMatches().length;
+    const nf = swFilterCount();
+    const prev = $('swipeBox').querySelector('.setup');
+    const scroll = prev ? prev.scrollTop : 0;   // on ne perd pas sa place en changeant un filtre
     $('swipeBox').innerHTML = `
-      <div class="swtop"><h2>💘 Mode Swipe</h2><button class="close" id="swClose">✕</button></div>
+      <div class="swtop"><h2>💘 Mode Swipe${nf?` <span class="fb">${nf}</span>`:''}</h2><button class="close" id="swClose">✕</button></div>
       <div class="setup">
         <div class="lbl">Plateforme <span class="hint">(plusieurs possibles)</span></div>
         <div class="chips" id="swPlat">
           ${[["all","Toutes"],["netflix","Netflix"],["prime","Prime Video"],["disney","Disney+"]].map(([v,l])=>{
             const on = v==="all" ? sw.plats.length===0 : sw.plats.includes(v);
-            return `<button class="chip" data-pl="${v}" aria-pressed="${on}">${l}</button>`;
+            return `<button class="chip" data-v="${v}" aria-pressed="${on}">${l}</button>`;
           }).join("")}
         </div>
         <div class="lbl">Type</div>
-        <div class="chips" id="swType">
-          ${[["all","Tout"],["film","Films"],["serie","Séries"]].map(([v,l])=>
-            `<button class="chip" data-ty="${v}" aria-pressed="${sw.type===v}">${l}</button>`).join("")}
-        </div>
+        ${chipRow('swType',TYPE_OPTS,sw.type)}
+        <div class="lbl">Humeur</div>
+        ${chipRow('swMood',MOOD_OPTS,sw.mood)}
+        <div class="lbl">Langue VO <span class="hint">(plusieurs possibles)</span></div>
+        ${langChipsHTML('swLang', sw.lang)}
         <div class="lbl">Genre</div>
         <select id="swGenre"><option value="all">Tous les genres</option>${genreList.map(g=>`<option value="${esc(g)}" ${sw.genre===g?'selected':''}>${esc(g)}</option>`).join("")}</select>
         <div class="lbl">Année de sortie</div>
         <select id="swYear">${YEARS.map(([v,l])=>`<option value="${v}" ${sw.year==v?'selected':''}>${l}</option>`).join("")}</select>
+        <div class="lbl">Note minimale</div>
+        ${chipRow('swRating',RATING_OPTS,sw.minRating)}
+        <label class="swtoggle"><input type="checkbox" id="swSkipFav" ${sw.skipFav?'checked':''}>
+          <span>Ignorer les titres déjà dans ma liste ❤️</span></label>
         <button class="start" id="swStart" ${n?'':'disabled'}>Commencer (${n} titre${n>1?'s':''}) →</button>
+        ${nf?`<button class="swreset" id="swReset">Réinitialiser les filtres</button>`:''}
         <div class="hint">Glisse à droite ❤️ pour garder, à gauche ✕ pour passer.</div>
       </div>`;
+    const box = $('swipeBox').querySelector('.setup'); if(box) box.scrollTop = scroll;
     $('swClose').onclick=()=>closeOv('swipe');
     $('swPlat').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
-      const v=b.dataset.pl;
+      const v=b.dataset.v;
       if(v==="all") sw.plats=[];
       else { const i=sw.plats.indexOf(v); if(i>=0) sw.plats.splice(i,1); else sw.plats.push(v); }
       renderSetup();
     };
-    $('swType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.type=b.dataset.ty;renderSetup();};
+    $('swType').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.type=b.dataset.v;renderSetup();};
+    $('swMood').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.mood=b.dataset.v;renderSetup();};
+    $('swLang').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;toggleLang(sw.lang,b.dataset.v);renderSetup();};
+    $('swRating').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;sw.minRating=+b.dataset.v;renderSetup();};
+    $('swSkipFav').onchange=e=>{sw.skipFav=e.target.checked;renderSetup();};
     $('swGenre').onchange=e=>{sw.genre=e.target.value;renderSetup();};
     $('swYear').onchange=e=>{sw.year=+e.target.value;renderSetup();};
     $('swStart').onclick=startDeck;
+    const rs=$('swReset'); if(rs) rs.onclick=()=>{
+      Object.assign(sw,{type:"all",mood:"all",genre:"all",lang:[],year:0,minRating:0,skipFav:false});
+      renderSetup();
+    };
   }
 
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -1048,13 +1094,27 @@
     return `<div class="swcard" style="--g:${grad(m.t)}">
       <span class="wm">${initials(m.t)}</span><span class="scrim"></span>
       <div class="stamp like">J'AIME</div><div class="stamp nope">PASSER</div>
-      <div class="top">${platPills(m)}${m.rating>0?`<span class="rate">★ ${m.rating.toFixed(1)}</span>`:''}</div>
+      <div class="top"><span class="plats">${platPills(m)}</span>
+        <span class="rates">${m.rating>0?`<span class="rate">★ ${m.rating.toFixed(1)}</span>`:''}<span class="rate tom" data-rt hidden></span></span></div>
       <div class="cap">
         <h3>${esc(m.t)}</h3>
         <div class="m">${metaLine(m)}</div>
         <div class="tg">${genrePills(m)}</div>
       </div>
     </div>`;
+  }
+
+  /* note Rotten Tomatoes directement sur la carte (TMDB -> imdb_id -> OMDb, tout en cache) */
+  function loadCardRT(card, m){
+    if(!card || !m || !tmdbKey || m.id==null) return;
+    fetchDetail(m).then(d=>{
+      if(!d || !d.imdbId) return;
+      return fetchOmdb(d.imdbId).then(r=>{
+        if(!r || !r.rt || !card.isConnected) return;
+        const el=card.querySelector('[data-rt]'); if(!el) return;
+        el.textContent=`🍅 ${r.rt}`; el.hidden=false;
+      });
+    }).catch(()=>{});
   }
 
   function renderDeck(){
@@ -1079,7 +1139,11 @@
     $('swNope').onclick=()=>trigger('nope');
     $('swLike').onclick=()=>trigger('like');
     $('swInfo').onclick=()=>openSheet(sw.deck[sw.idx]);
-    $('deck').querySelectorAll('.swslot').forEach(slot=>loadHeadPoster(slot.querySelector('.swcard'), sw.deck[+slot.dataset.k]));
+    $('deck').querySelectorAll('.swslot').forEach(slot=>{
+      const m=sw.deck[+slot.dataset.k];
+      loadHeadPoster(slot.querySelector('.swcard'), m);
+      loadCardRT(slot.querySelector('.swcard'), m);
+    });
     attachDrag();
   }
 
@@ -1162,7 +1226,14 @@
       updateFavChip(); render();
     };
   }
-  $('swipeBtn').addEventListener('click',()=>{ if(!sw.plats.length) sw.plats=[...platSel]; renderSetup(); openOv('swipe'); });
+  /* première ouverture : on reprend les filtres de la page principale ; ensuite le Swipe garde les siens */
+  $('swipeBtn').addEventListener('click',()=>{
+    if(!sw.seeded){
+      Object.assign(sw,{plats:[...platSel], type:state.type, mood:state.mood, genre:state.genre,
+                        lang:state.lang.slice(), year:state.yearSel, minRating:state.minRating, seeded:true});
+    } else if(!sw.plats.length) sw.plats=[...platSel];
+    renderSetup(); openOv('swipe');
+  });
 
   /* ====================== CATALOGUE LIVE TMDB (région FR) ====================== */
   const PROV = { netflix:"8", prime:"9|119", disney:"337" };   // id fournisseur FR (| = OU ; Prime a 2 ids)
