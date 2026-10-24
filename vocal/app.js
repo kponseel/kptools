@@ -45,11 +45,62 @@ const fmtMB = b => (b / 1048576).toFixed(0) + " Mo";
 const modelLabel = m => (m || "").split("/").pop().replace("whisper-", "Whisper ");
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-/* ---------- Décodage audio : Opus → PCM mono 16 kHz ---------- */
-async function decodeAudio(blob) {
+/* ---------- Décodage audio : n'importe quel format → PCM mono 16 kHz ----------
+   1. Le navigateur sait lire la plupart des formats (opus, ogg, m4a/aac, mp3, wav, flac, webm, mp4…).
+   2. Sinon (amr, 3gp, wma, aiff…), on convertit avec ffmpeg.wasm, chargé seulement à ce moment-là. */
+const FFMPEG_CORE = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm/";
+let ffmpegPromise = null;
+
+function getFFmpeg() {
+  if (!ffmpegPromise) {
+    ffmpegPromise = (async () => {
+      const { FFmpeg } = await import("./vendor/ffmpeg/index.js");
+      const ff = new FFmpeg();
+      await ff.load({ coreURL: FFMPEG_CORE + "ffmpeg-core.js", wasmURL: FFMPEG_CORE + "ffmpeg-core.wasm" });
+      return ff;
+    })().catch(err => { ffmpegPromise = null; throw err; });
+  }
+  return ffmpegPromise;
+}
+
+async function convertWithFFmpeg(blob, onStage) {
+  onStage("Téléchargement du convertisseur (≈ 31 Mo, une seule fois)…");
+  let ff;
+  try { ff = await getFFmpeg(); }
+  catch { throw new Error("Format rare : le convertisseur n'a pas pu être téléchargé. Vérifie ta connexion puis réessaie."); }
+  onStage("Conversion du fichier…");
+  const ext = ((blob.name || "").match(/\.[a-z0-9]{1,5}$/i) || [""])[0].toLowerCase();
+  const input = "in" + ext, output = "out.f32";
+  await ff.writeFile(input, new Uint8Array(await blob.arrayBuffer()));
+  try {
+    // -vn : on ignore la vidéo ; sortie en PCM float 32 bits, mono, 16 kHz (ce qu'attend Whisper).
+    const code = await ff.exec(["-i", input, "-vn", "-ac", "1", "-ar", "16000", "-f", "f32le", output]);
+    if (code !== 0) throw new Error("ffmpeg " + code);
+    const raw = await ff.readFile(output);
+    const data = new Float32Array(raw.buffer, raw.byteOffset, Math.floor(raw.byteLength / 4));
+    if (!data.length) throw new Error("vide");
+    return { data: new Float32Array(data), duration: data.length / 16000 };
+  } catch {
+    throw new Error("Ce fichier n'a pas pu être lu : format non pris en charge, ou pas de piste audio.");
+  } finally {
+    try { await ff.deleteFile(input); } catch {}
+    try { await ff.deleteFile(output); } catch {}
+  }
+}
+
+async function decodeAudio(blob, onStage = () => {}) {
+  try {
+    return await decodeNative(blob);
+  } catch {
+    return await convertWithFFmpeg(blob, onStage);
+  }
+}
+
+async function decodeNative(blob) {
   const buf = await blob.arrayBuffer();
   const ctx = new OfflineAudioContext(1, 16000, 16000); // decodeAudioData rééchantillonne à 16 kHz
   const audio = await ctx.decodeAudioData(buf);
+  if (!audio.length) throw new Error("vide");
   let data;
   if (audio.numberOfChannels === 1) {
     data = audio.getChannelData(0);
@@ -64,12 +115,32 @@ async function decodeAudio(blob) {
 }
 
 /* ---------- Worker Whisper ---------- */
-const worker = new Worker("worker.js", { type: "module" });
+// Le worker est créé à la demande, et recréé s'il n'a pas pu démarrer (ex. : pas de réseau).
+let worker = null;
 const pending = new Map(); // id -> {resolve, reject}
 let modelReady = false;
 let device = "";
 
-worker.onmessage = e => {
+function getWorker() {
+  if (!worker) {
+    worker = new Worker("worker.js", { type: "module" });
+    worker.onmessage = onWorkerMessage;
+    worker.onerror = onWorkerError;
+  }
+  return worker;
+}
+
+function onWorkerError(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  try { worker.terminate(); } catch {}
+  worker = null; modelReady = false; setBar(null);
+  const err = new Error("Le moteur de transcription n'a pas pu se charger. Vérifie ta connexion puis réessaie.");
+  for (const p of pending.values()) p.reject(err);
+  pending.clear();
+  setStatus(err.message, "err");
+}
+
+function onWorkerMessage(e) {
   const m = e.data;
   if (m.type === "loading") {
     if (!modelReady) setStatus(`Préparation du modèle ${modelLabel(m.model)}…`, "busy");
@@ -88,13 +159,12 @@ worker.onmessage = e => {
   } else if (m.type === "log") {
     console.info(m.message);
   }
-};
-worker.onerror = e => setStatus("Le moteur de transcription n'a pas pu démarrer : " + (e.message || "erreur inconnue"), "err");
+}
 
 function transcribe(id, audio) {
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
-    worker.postMessage({ type: "transcribe", id, audio, model: settings.model, language: settings.lang }, [audio.buffer]);
+    getWorker().postMessage({ type: "transcribe", id, audio, model: settings.model, language: settings.lang }, [audio.buffer]);
   });
 }
 
@@ -184,7 +254,7 @@ async function processItem(item) {
   const left = items.filter(i => i.status === "pending").length;
   try {
     item.status = "decoding"; item.error = ""; render();
-    const { data, duration } = await decodeAudio(item.audio);
+    const { data, duration } = await decodeAudio(item.audio, stage => setStatus(stage, "busy"));
     item.duration = duration;
     item.status = "transcribing"; render();
     const t0 = Date.now();
@@ -201,9 +271,7 @@ async function processItem(item) {
     if (settings.autoSummary && settings.apiKey && item.text) summarizeItem(item);
   } catch (err) {
     item.status = "error";
-    item.error = /decode|Unable to decode|EncodingError/i.test(err.message + err.name)
-      ? "Ce fichier audio n'a pas pu être lu."
-      : /fetch|network|load failed/i.test(err.message) && !modelReady
+    item.error = /fetch|network|load failed|import/i.test(err.message) && !modelReady && item.duration
         ? "Téléchargement du modèle impossible. Vérifie ta connexion puis réessaie."
         : err.message;
     await save(item); render();
@@ -351,7 +419,7 @@ $("clearHistory").addEventListener("click", async () => {
 });
 $("clearModel").addEventListener("click", async () => {
   if (!confirm("Supprimer les modèles téléchargés ? Ils seront re-téléchargés au prochain vocal.")) return;
-  try { await caches.delete("transformers-cache"); } catch {}
+  try { await caches.delete("transformers-cache"); await caches.delete("vocaux-cdn-v1"); } catch {}
   modelReady = false;
   setStatus("Modèles supprimés. Le modèle sera re-téléchargé au prochain vocal.", "");
   toast("Modèles supprimés");
@@ -386,7 +454,7 @@ async function preload() {
     const c = await caches.open("transformers-cache");
     cached = (await c.keys()).some(r => r.url.includes(settings.model));
   } catch {}
-  if (cached) worker.postMessage({ type: "load", model: settings.model });
+  if (cached) getWorker().postMessage({ type: "load", model: settings.model });
   else setStatus(`Modèle ${modelLabel(settings.model)} : téléchargé au premier vocal.`, "");
 }
 

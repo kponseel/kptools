@@ -2,13 +2,17 @@
    1. Reçoit les fichiers audio partagés depuis WhatsApp (share target, POST multipart)
       et les met dans IndexedDB, puis ouvre l'app.
    2. Garde la coquille de l'app en cache pour l'usage hors ligne.
-   Le modèle Whisper (Hugging Face) et les scripts CDN ne sont pas interceptés :
-   transformers.js gère lui-même leur cache. */
+   3. Garde aussi les librairies du CDN (versions figées : transformers.js, ffmpeg, SDK Claude).
+   Le modèle Whisper (Hugging Face) n'est pas intercepté : transformers.js gère son cache. */
 importScripts("db.js");
 
-const CACHE = "vocaux-shell-v1";
+const CACHE = "vocaux-shell-v2";
+const CDN_CACHE = "vocaux-cdn-v1";
 const ASSETS = ["./", "index.html", "app.js", "worker.js", "db.js", "manifest.json",
-                "icon-192.png", "icon-512.png", "icon-maskable.png", "apple-touch-icon.png"];
+                "icon-192.png", "icon-512.png", "icon-maskable.png", "apple-touch-icon.png",
+                "vendor/ffmpeg/index.js", "vendor/ffmpeg/classes.js", "vendor/ffmpeg/const.js",
+                "vendor/ffmpeg/errors.js", "vendor/ffmpeg/types.js", "vendor/ffmpeg/utils.js",
+                "vendor/ffmpeg/worker.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -17,7 +21,7 @@ self.addEventListener("install", e => {
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith("vocaux-") && k !== CACHE).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith("vocaux-") && k !== CACHE && k !== CDN_CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -42,7 +46,21 @@ self.addEventListener("fetch", e => {
     e.respondWith(handleShare(req));
     return;
   }
-  if (req.method !== "GET" || url.origin !== location.origin) return;
+  if (req.method !== "GET") return;
+  // Fichiers du CDN avec un numéro de version précis : ils ne changent jamais, donc cache d'abord.
+  if (url.hostname === "cdn.jsdelivr.net" && /@\d+\.\d+\.\d+/.test(url.pathname)) {
+    e.respondWith(
+      caches.open(CDN_CACHE).then(async c => {
+        const cached = await c.match(req);
+        if (cached) return cached;
+        const res = await fetch(req);
+        if (res.ok && res.type !== "opaque") c.put(req, res.clone()).catch(() => {});
+        return res;
+      })
+    );
+    return;
+  }
+  if (url.origin !== location.origin) return;
   e.respondWith(
     caches.open(CACHE).then(async c => {
       const cached = await c.match(req, { ignoreSearch: req.mode === "navigate" });
