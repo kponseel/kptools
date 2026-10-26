@@ -1,0 +1,1 @@
+@ffmpeg/ffmpeg 0.12.15 (MIT) — fichiers dist/esm copiés tels quels. Le cœur wasm (@ffmpeg/core 0.12.10) est chargé depuis jsDelivr.

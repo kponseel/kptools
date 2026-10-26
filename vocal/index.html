@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Vocaux</title>
-<meta name="description" content="Transcris tes messages vocaux WhatsApp directement sur ton téléphone.">
+<meta name="description" content="Transcris tes vocaux WhatsApp, enregistrements et vidéos directement sur ton téléphone.">
 <meta name="theme-color" content="#0b1412">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
@@ -113,10 +113,10 @@
   </div>
 
   <label class="pick" id="pick">
-    <strong>Choisir des vocaux</strong>
-    <span>Fichiers .opus / .ogg de WhatsApp, un ou plusieurs</span>
-    <span>Ou dans WhatsApp : appui long sur un vocal → Partager → Vocaux</span>
-    <input type="file" id="fileInput" class="sr" accept="audio/*,.opus,.ogg,.oga,.m4a,.mp3,.wav,.aac" multiple>
+    <strong>Choisir des fichiers audio ou vidéo</strong>
+    <span>Vocaux WhatsApp, Enregistreur, mémos, mp3, m4a, wav, amr, vidéos… un ou plusieurs</span>
+    <span>Ou depuis WhatsApp / l'Enregistreur : Partager → Vocaux</span>
+    <input type="file" id="fileInput" class="sr" accept="audio/*,video/*,application/ogg,.opus,.ogg,.oga,.m4a,.m4b,.mp3,.aac,.wav,.flac,.webm,.weba,.mka,.amr,.awb,.3gp,.3ga,.3gpp,.wma,.aif,.aiff,.caf,.ac3,.spx,.mp4,.mov,.mkv,.avi,.m4v" multiple>
   </label>
 
   <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement…</span></div>
