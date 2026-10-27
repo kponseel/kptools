@@ -77,6 +77,12 @@
   .summary{margin:10px 0 2px;padding:10px 12px;border-radius:12px;background:var(--bg3);font-size:14px;white-space:pre-wrap;}
   .summary b{display:block;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
   .err-msg{color:var(--danger);font-size:13px;margin-top:6px;}
+  .fixbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--accent);font-weight:600;margin-top:8px;}
+  .link{border:0;background:none;padding:0;color:var(--dim);text-decoration:underline;font-size:12.5px;cursor:pointer;}
+  .howto{font-size:13px;color:var(--dim);}
+  .howto summary{cursor:pointer;color:var(--accent);font-weight:600;}
+  .howto ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;}
+  .howto a{color:var(--accent);}
   .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
 
   dialog{border:1px solid var(--border);border-radius:20px;background:var(--bg2);color:var(--txt);padding:0;width:min(560px,calc(100% - 24px));max-height:calc(100% - 40px);}
@@ -135,11 +141,15 @@
     <div class="field">
       <label for="model">Modèle de transcription</label>
       <select id="model">
+        <option value="onnx-community/cohere-transcribe-03-2026-ONNX">Le plus précis : Cohere Transcribe (≈ 1,5 Go, GPU requis)</option>
+        <option value="onnx-community/whisper-large-v3-turbo">Très précis : Whisper turbo (≈ 700 Mo)</option>
         <option value="onnx-community/whisper-small">Précis : Whisper small (≈ 250 Mo)</option>
         <option value="onnx-community/whisper-base">Rapide : Whisper base (≈ 80 Mo)</option>
         <option value="onnx-community/whisper-tiny">Très rapide : Whisper tiny (≈ 40 Mo)</option>
       </select>
-      <small>Téléchargé une seule fois, puis tout se passe sur ton téléphone. L'audio n'est jamais envoyé sur internet.</small>
+      <small>Téléchargé une seule fois, puis tout se passe sur ton téléphone. L'audio n'est jamais envoyé sur internet.
+        Les gros modèles sont plus précis mais plus lents, et demandent un téléphone récent : fais le premier téléchargement en Wi-Fi.
+        Cohere ne détecte pas la langue tout seul : choisis-la ci-dessous.</small>
     </div>
     <div class="field">
       <label for="lang">Langue des vocaux</label>
@@ -156,9 +166,18 @@
     </div>
     <hr>
     <div class="field">
-      <label for="apiKey">Résumé auto : clé API Claude (optionnelle)</label>
+      <label for="apiKey">Claude (optionnel) : clé API pour corriger et résumer</label>
       <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
-      <small>Gardée seulement sur ce téléphone. Pour résumer, le <b>texte</b> transcrit (pas l'audio) est envoyé à l'API Claude d'Anthropic. Clé à créer sur console.anthropic.com.</small>
+      <small>Modèle Claude Haiku 5.5 : moins d'un dixième de centime par vocal. Seul le <b>texte</b> transcrit est envoyé à Anthropic, jamais l'audio. La clé reste sur ce téléphone.</small>
+      <details class="howto">
+        <summary>Comment obtenir une clé ?</summary>
+        <ol>
+          <li>Crée un compte sur <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.</li>
+          <li><b>Billing</b> → ajoute un peu de crédit (5 $ suffisent pour des milliers de vocaux).</li>
+          <li>Conseillé : <b>Limits</b> → fixe une limite de dépense mensuelle basse.</li>
+          <li><b>API Keys</b> → <b>Create Key</b>, copie la clé (elle commence par sk-ant-) et colle-la ici.</li>
+        </ol>
+      </details>
     </div>
     <label class="check"><input type="checkbox" id="autoSummary"> Résumer automatiquement chaque vocal</label>
     <hr>
