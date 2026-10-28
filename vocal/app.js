@@ -144,10 +144,12 @@ function onWorkerError(e) {
 function onWorkerMessage(e) {
   const m = e.data;
   if (m.type === "loading") {
-    if (!modelReady) setStatus(`Préparation du modèle ${modelLabel(m.model)}…`, "busy");
+    if (!modelReady) setStatus(`Chargement du modèle ${modelLabel(m.model)}…`, "busy");
   } else if (m.type === "load-progress") {
     if (m.total) {
-      setStatus(`Téléchargement du modèle (une seule fois) : ${fmtMB(m.loaded)} / ${fmtMB(m.total)}`, "busy");
+      setStatus(m.downloading
+        ? `Téléchargement du modèle (une seule fois) : ${fmtMB(m.loaded)} / ${fmtMB(m.total)}`
+        : `Chargement du modèle depuis le téléphone… ${Math.round(m.loaded / m.total * 100)} %`, "busy");
       setBar(m.loaded / m.total);
     }
   } else if (m.type === "ready") {
@@ -464,6 +466,7 @@ function openSettings() {
   els.apiKey.value = settings.apiKey;
   els.autoSummary.checked = settings.autoSummary;
   els.settings.showModal();
+  showStorageInfo();
 }
 els.settings.addEventListener("close", () => {
   const modelChanged = els.model.value !== settings.model;
@@ -472,7 +475,7 @@ els.settings.addEventListener("close", () => {
   settings.apiKey = els.apiKey.value.trim();
   settings.autoSummary = els.autoSummary.checked;
   saveSettings();
-  if (modelChanged) { modelReady = false; preload(); }
+  if (modelChanged) { modelReady = false; if (!processing) preload(); }
 });
 $("openSettings").addEventListener("click", openSettings);
 $("clearHistory").addEventListener("click", async () => {
@@ -486,6 +489,7 @@ $("clearModel").addEventListener("click", async () => {
   try { await caches.delete("transformers-cache"); await caches.delete("vocaux-cdn-v1"); } catch {}
   modelReady = false;
   setStatus("Modèles supprimés. Le modèle sera re-téléchargé au prochain vocal.", "");
+  showStorageInfo();
   toast("Modèles supprimés");
 });
 
@@ -510,16 +514,43 @@ els.installBtn.addEventListener("click", async () => {
 window.addEventListener("appinstalled", () => els.installBanner.classList.remove("show"));
 
 /* ---------- Démarrage ---------- */
-async function preload() {
-  // Prépare le modèle en avance seulement s'il est probablement déjà en cache
-  // (on évite de lancer 250 Mo de téléchargement sans action de l'utilisateur).
-  let cached = false;
+// Modèles déjà enregistrés sur le téléphone, avec leur taille.
+async function downloadedModels() {
+  const out = new Map();
   try {
     const c = await caches.open("transformers-cache");
-    cached = (await c.keys()).some(r => r.url.includes(settings.model));
+    for (const req of await c.keys()) {
+      const m = req.url.match(/^https:\/\/huggingface\.co\/([^/]+\/[^/]+)\/resolve\//);
+      if (!m) continue;
+      const res = await c.match(req);
+      const size = Number(res && res.headers.get("content-length")) || 0;
+      out.set(m[1], (out.get(m[1]) || 0) + size);
+    }
   } catch {}
-  if (cached) getWorker().postMessage({ type: "load", model: settings.model });
-  else setStatus(`Modèle ${modelLabel(settings.model)} : téléchargé au premier vocal.`, "");
+  return out;
+}
+
+async function preload() {
+  // On ne charge pas le modèle en mémoire à l'ouverture : ça prendrait du temps et de la
+  // mémoire pour rien quand on veut juste relire l'historique. Il est chargé au premier vocal.
+  if (modelReady) return;
+  const models = await downloadedModels();
+  setStatus(models.has(settings.model)
+    ? `${modelLabel(settings.model)} · déjà sur le téléphone ✓`
+    : `${modelLabel(settings.model)} : téléchargé au premier vocal.`, models.has(settings.model) ? "ok" : "");
+}
+
+async function showStorageInfo() {
+  const el = $("storageInfo");
+  if (!el) return;
+  const models = await downloadedModels();
+  let usage = "", persisted = null;
+  try { const e = await navigator.storage.estimate(); usage = fmtMB(e.usage || 0); } catch {}
+  try { persisted = await navigator.storage.persisted(); } catch {}
+  const list = models.size ? [...models.entries()].map(([m, b]) => `${modelLabel(m)}${b ? " (" + fmtMB(b) + ")" : ""}`).join(", ") : "aucun";
+  el.textContent = `Modèles sur ce téléphone : ${list}.` + (usage ? ` Espace utilisé par l'app : ${usage}.` : "") +
+    (persisted === true ? " Stockage protégé ✓ : Android ne l'effacera pas tout seul."
+      : persisted === false ? " Stockage non protégé : si le téléphone manque de place, Android peut effacer les modèles (installer l'app aide à le protéger)." : "");
 }
 
 async function takeInbox() {

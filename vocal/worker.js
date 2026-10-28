@@ -23,15 +23,29 @@ async function gpuInfo() {
   } catch { return null; }
 }
 
-// Regroupe la progression des différents fichiers du modèle en un seul pourcentage.
-function progressReporter() {
+// Fichiers de ce modèle déjà enregistrés sur le téléphone (cache de transformers.js).
+async function cachedFiles(model) {
+  const prefix = `https://huggingface.co/${model}/resolve/main/`;
+  try {
+    const keys = await (await caches.open("transformers-cache")).keys();
+    return new Set(keys.map(r => r.url).filter(u => u.startsWith(prefix)).map(u => decodeURIComponent(u.slice(prefix.length))));
+  } catch { return new Set(); }
+}
+
+// Regroupe la progression des fichiers du modèle en un seul pourcentage.
+// transformers.js signale de la même façon un vrai téléchargement et une simple lecture
+// depuis le cache : on regarde nous-mêmes quels fichiers sont déjà sur le téléphone.
+function progressReporter(cached) {
   const files = new Map();
   return p => {
     if (p.status === "progress" && p.file) {
-      files.set(p.file, { loaded: p.loaded || 0, total: p.total || 0 });
-      let loaded = 0, total = 0;
-      for (const f of files.values()) { loaded += f.loaded; total += f.total; }
-      self.postMessage({ type: "load-progress", loaded, total });
+      files.set(p.file, { loaded: p.loaded || 0, total: p.total || 0, cached: cached.has(p.file) });
+      let loaded = 0, total = 0, downloading = false;
+      for (const f of files.values()) {
+        loaded += f.loaded; total += f.total;
+        if (!f.cached && f.loaded < f.total) downloading = true;
+      }
+      self.postMessage({ type: "load-progress", loaded, total, downloading });
     }
   };
 }
@@ -43,7 +57,7 @@ async function load(model) {
   if (asr && loadedKey === key) return;
   if (asr) { try { await asr.dispose(); } catch {} asr = null; }
 
-  const progress_callback = progressReporter();
+  const progress_callback = progressReporter(await cachedFiles(model));
   if (isCohere(model)) {
     // 2 milliards de paramètres : trop lourd pour le CPU d'un téléphone, GPU obligatoire.
     if (!wantGPU) throw new Error("Cohere Transcribe a besoin du GPU (WebGPU), indisponible ici. Choisis un modèle Whisper dans les réglages.");
