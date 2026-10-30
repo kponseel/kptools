@@ -80,6 +80,7 @@
   .fixbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--accent);font-weight:600;margin-top:8px;}
   .link{border:0;background:none;padding:0;color:var(--dim);text-decoration:underline;font-size:12.5px;cursor:pointer;}
   .howto{font-size:13px;color:var(--dim);}
+  .storage{font-size:12.5px;color:var(--dim);line-height:1.45;}
   .howto summary{cursor:pointer;color:var(--accent);font-weight:600;}
   .howto ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;}
   .howto a{color:var(--accent);}
@@ -181,6 +182,7 @@
     </div>
     <label class="check"><input type="checkbox" id="autoSummary"> Résumer automatiquement chaque vocal</label>
     <hr>
+    <small id="storageInfo" class="storage"></small>
     <div class="row">
       <button type="button" class="btn ghost small" id="clearHistory">Effacer l'historique</button>
       <button type="button" class="btn ghost small" id="clearModel">Supprimer les modèles téléchargés</button>
