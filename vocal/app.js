@@ -120,6 +120,7 @@ async function decodeNative(blob) {
 let worker = null;
 const pending = new Map(); // id -> {resolve, reject}
 let modelReady = false;
+let notSaved = false; // le modèle n'a pas pu être enregistré (souvent : plus de place)
 let device = "";
 
 function getWorker() {
@@ -159,6 +160,9 @@ function onWorkerMessage(e) {
     const p = pending.get(m.id);
     if (p) { pending.delete(m.id); m.type === "result" ? p.resolve(m) : p.reject(new Error(m.message)); }
     else if (m.type === "error") { setStatus("Erreur : " + m.message, "err"); setBar(null); }
+  } else if (m.type === "not-saved") {
+    notSaved = true;
+    toast("Modèle non enregistré sur le téléphone : il sera re-téléchargé la prochaine fois");
   } else if (m.type === "log") {
     console.info(m.message);
   }
@@ -545,10 +549,14 @@ async function showStorageInfo() {
   if (!el) return;
   const models = await downloadedModels();
   let usage = "", persisted = null;
-  try { const e = await navigator.storage.estimate(); usage = fmtMB(e.usage || 0); } catch {}
+  try {
+    const e = await navigator.storage.estimate();
+    usage = fmtMB(e.usage || 0) + (e.quota ? ` sur ${fmtMB(e.quota)} autorisés` : "");
+  } catch {}
   try { persisted = await navigator.storage.persisted(); } catch {}
   const list = models.size ? [...models.entries()].map(([m, b]) => `${modelLabel(m)}${b ? " (" + fmtMB(b) + ")" : ""}`).join(", ") : "aucun";
-  el.textContent = `Modèles sur ce téléphone : ${list}.` + (usage ? ` Espace utilisé par l'app : ${usage}.` : "") +
+  el.textContent = (notSaved ? "⚠ Le dernier modèle téléchargé n'a pas pu être enregistré (pas assez de place ?) : libère de l'espace ou choisis un modèle plus petit. " : "") +
+    `Modèles sur ce téléphone : ${list}.` + (usage ? ` Espace utilisé par l'app : ${usage}.` : "") +
     (persisted === true ? " Stockage protégé ✓ : Android ne l'effacera pas tout seul."
       : persisted === false ? " Stockage non protégé : si le téléphone manque de place, Android peut effacer les modèles (installer l'app aide à le protéger)." : "");
 }

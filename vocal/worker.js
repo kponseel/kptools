@@ -35,9 +35,13 @@ async function cachedFiles(model) {
 // Regroupe la progression des fichiers du modèle en un seul pourcentage.
 // transformers.js signale de la même façon un vrai téléchargement et une simple lecture
 // depuis le cache : on regarde nous-mêmes quels fichiers sont déjà sur le téléphone.
+let loadedFiles = [];   // fichiers lus pendant le dernier chargement
+
 function progressReporter(cached) {
   const files = new Map();
+  loadedFiles = [];
   return p => {
+    if (p.file && !loadedFiles.includes(p.file)) loadedFiles.push(p.file);
     if (p.status === "progress" && p.file) {
       files.set(p.file, { loaded: p.loaded || 0, total: p.total || 0, cached: cached.has(p.file) });
       let loaded = 0, total = 0, downloading = false;
@@ -54,7 +58,7 @@ async function load(model) {
   const gpu = await gpuInfo();
   const wantGPU = !!gpu;
   const key = model + (wantGPU ? "|webgpu" : "|wasm");
-  if (asr && loadedKey === key) return;
+  if (asr && loadedKey === key) { loadedFiles = []; return; }
   if (asr) { try { await asr.dispose(); } catch {} asr = null; }
 
   const progress_callback = progressReporter(await cachedFiles(model));
@@ -87,6 +91,16 @@ async function load(model) {
   device = "wasm"; loadedKey = model + "|wasm";
 }
 
+// Après un téléchargement, vérifie que les fichiers ont bien été enregistrés sur le téléphone.
+// transformers.js ignore silencieusement un échec d'enregistrement (ex. : plus de place),
+// ce qui oblige à tout re-télécharger à chaque fois.
+async function checkSaved(model) {
+  if (!loadedFiles.length) return;            // modèle déjà en mémoire : rien n'a été lu
+  const saved = await cachedFiles(model);
+  const missing = loadedFiles.filter(f => !saved.has(f));
+  if (missing.length) self.postMessage({ type: "not-saved", model, missing });
+}
+
 async function run(audio, opts) {
   try {
     return await asr(audio, opts);
@@ -105,10 +119,12 @@ async function handle(msg) {
     if (msg.type === "load") {
       self.postMessage({ type: "loading", model: msg.model });
       await load(msg.model);
+      await checkSaved(msg.model);
       self.postMessage({ type: "ready", device });
     } else if (msg.type === "transcribe") {
       self.postMessage({ type: "loading", model: msg.model });
       await load(msg.model);
+      await checkSaved(msg.model);
       self.postMessage({ type: "ready", device });
       const t0 = performance.now();
       let opts;
