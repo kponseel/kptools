@@ -85,6 +85,20 @@
   .howto ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;}
   .howto a{color:var(--accent);}
   .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .btn.danger{background:var(--danger);color:#fff;}
+  .ver{text-align:center;color:var(--dim);font-size:12px;margin:22px 0 8px;}
+  .card.selectable{cursor:pointer;user-select:none;}
+  .card.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;}
+  .card.locked{opacity:.55;}
+  .pickbox{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);margin-bottom:6px;}
+  .pickbox input{width:20px;height:20px;accent-color:var(--accent);pointer-events:none;}
+  .selbar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+          padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--border);box-shadow:0 -6px 18px rgba(0,0,0,.18);}
+  .selbar span{flex:1;font-weight:600;font-size:14px;min-width:110px;}
+  .selbar[hidden]{display:none;}
+  body.selecting .wrap{padding-bottom:70px;}
+  body.selecting .toast{bottom:calc(84px + env(safe-area-inset-bottom));}
+  input[type=range]{width:100%;accent-color:var(--accent);}
 
   dialog{border:1px solid var(--border);border-radius:20px;background:var(--bg2);color:var(--txt);padding:0;width:min(560px,calc(100% - 24px));max-height:calc(100% - 40px);}
   dialog::backdrop{background:rgba(0,0,0,.55);}
@@ -129,12 +143,47 @@
   <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement…</span></div>
   <div class="bar" id="bar"><i id="barFill"></i></div>
 
+  <div class="banner" id="updateBanner">
+    <p>Une nouvelle version de l'app est prête.</p>
+    <button class="btn small" id="reloadBtn">Recharger</button>
+  </div>
+
   <div class="tools">
     <h2 id="listTitle">Historique</h2>
     <input class="search" id="search" type="search" placeholder="Rechercher…" aria-label="Rechercher dans l'historique" hidden>
+    <button class="btn ghost small" id="selectBtn" hidden>Sélectionner</button>
   </div>
   <div class="list" id="list"></div>
+  <footer class="ver" id="appVersion"></footer>
 </div>
+
+<div class="selbar" id="selBar" hidden>
+  <span id="selCount">0 sélectionné</span>
+  <button class="btn ghost small" id="selAll">Tout</button>
+  <button class="btn small danger" id="selDelete">Supprimer</button>
+  <button class="btn ghost small" id="selCancel">Annuler</button>
+</div>
+
+<dialog id="trimDlg">
+  <form method="dialog" class="dlg">
+    <h3>Couper le vocal</h3>
+    <audio id="trimAudio" controls preload="metadata"></audio>
+    <div class="field">
+      <label for="trimStart">Début : <b id="trimStartLbl">0:00</b></label>
+      <input type="range" id="trimStart" min="0" step="0.1" value="0">
+    </div>
+    <div class="field">
+      <label for="trimEnd">Fin : <b id="trimEndLbl">0:00</b></label>
+      <input type="range" id="trimEnd" min="0" step="0.1" value="0">
+    </div>
+    <div class="row"><button type="button" class="btn ghost small" id="trimPlay">▶ Écouter la sélection</button></div>
+    <small class="storage" id="trimInfo"></small>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" value="cancel">Annuler</button>
+      <button class="btn" value="ok" id="trimOk">Couper et retranscrire</button>
+    </div>
+  </form>
+</dialog>
 
 <dialog id="settings">
   <form method="dialog" class="dlg">
@@ -183,6 +232,7 @@
     <label class="check"><input type="checkbox" id="autoSummary"> Résumer automatiquement chaque vocal</label>
     <hr>
     <small id="storageInfo" class="storage"></small>
+    <small id="versionInfo" class="storage"></small>
     <div class="row">
       <button type="button" class="btn ghost small" id="clearHistory">Effacer l'historique</button>
       <button type="button" class="btn ghost small" id="clearModel">Supprimer les modèles téléchargés</button>
