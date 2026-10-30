@@ -6,7 +6,7 @@
    Le modèle Whisper (Hugging Face) n'est pas intercepté : transformers.js gère son cache. */
 importScripts("db.js");
 
-const CACHE = "vocaux-shell-v4";
+const CACHE = "vocaux-shell-v5";
 const CDN_CACHE = "vocaux-cdn-v1";
 const ASSETS = ["./", "index.html", "app.js", "worker.js", "db.js", "manifest.json",
                 "icon-192.png", "icon-512.png", "icon-maskable.png", "apple-touch-icon.png",
