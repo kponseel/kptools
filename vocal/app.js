@@ -1,6 +1,9 @@
 /* Vocaux : transcription locale des vocaux WhatsApp (Opus) avec Whisper. */
 /* global dbPut, dbDelete, dbGetAll, dbClear */
 
+// Date de cette version de l'app (à mettre à jour à chaque publication).
+const APP_VERSION = "2026-10-30T22:41:00Z"; // UTC
+
 const ANTHROPIC_SDK = "https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.133.0/+esm";
 const CLAUDE_MODEL = "claude-haiku-5-5";
 
@@ -9,7 +12,7 @@ const els = {
   fileInput: $("fileInput"), pick: $("pick"), list: $("list"), search: $("search"), listTitle: $("listTitle"),
   status: $("statusText"), dot: $("statusDot"), bar: $("bar"), barFill: $("barFill"),
   settings: $("settings"), model: $("model"), lang: $("lang"), apiKey: $("apiKey"), autoSummary: $("autoSummary"),
-  toast: $("toast"), installBanner: $("installBanner"), installBtn: $("installBtn"),
+  toast: $("toast"), installBanner: $("installBanner"), installBtn: $("installBtn"), updateBanner: $("updateBanner"),
 };
 
 /* ---------- Réglages (stockés sur l'appareil) ---------- */
@@ -370,6 +373,7 @@ function el(tag, attrs = {}, children = []) {
 
 function card(item) {
   const busy = item.status !== "done" && item.status !== "error";
+  if (selecting) return selectableCard(item, busy);
   const meta = el("div", { class: "meta" }, [
     el("span", { class: "name", text: item.name }),
   ]);
@@ -419,7 +423,10 @@ function card(item) {
   if (item.status === "error") {
     actions.append(el("button", { class: "btn small", text: "Réessayer", onclick: () => { item.status = "pending"; save(item); render(); processQueue(); } }));
   }
-  if (!busy) actions.append(el("button", { class: "btn ghost small", text: "Supprimer", onclick: () => remove(item) }));
+  if (!busy && item.audio) actions.append(el("button", { class: "btn ghost small", text: "Couper", onclick: () => openTrim(item) }));
+  if (!busy) actions.append(el("button", { class: "btn ghost small", text: "Supprimer", onclick: () => {
+    if (confirm(`Supprimer « ${item.name} » ?`)) remove(item);
+  } }));
 
   return el("article", { class: "card" }, [meta, meta2, audio, fix, text, err, summary, actions.childElementCount ? actions : null]);
 }
@@ -429,6 +436,8 @@ function render() {
   const shown = q ? items.filter(i => (i.text + " " + (i.corrected || "") + " " + i.summary + " " + i.name).toLowerCase().includes(q)) : items;
   els.search.hidden = items.length < 4;
   els.listTitle.hidden = !els.search.hidden;
+  $("selectBtn").hidden = !items.length || selecting;
+  updateSelBar();
   els.list.replaceChildren(
     ...(shown.length ? shown.map(card)
       : [el("div", { class: "empty", text: q ? "Aucun résultat." : "Aucun vocal transcrit pour l'instant." })])
@@ -456,11 +465,170 @@ async function share(item) {
   }
 }
 
-async function remove(item) {
+async function remove(item, { silent = false } = {}) {
   items = items.filter(i => i !== item);
-  if (audioEls.has(item.id)) { URL.revokeObjectURL(audioEls.get(item.id).src); audioEls.delete(item.id); }
+  dropAudioEl(item);
   try { await dbDelete("history", item.id); } catch {}
+  if (!silent) { render(); toast("Vocal supprimé"); }
+}
+
+function dropAudioEl(item) {
+  if (audioEls.has(item.id)) { URL.revokeObjectURL(audioEls.get(item.id).src); audioEls.delete(item.id); }
+}
+
+/* ---------- Sélection multiple ---------- */
+let selecting = false;
+const selected = new Set();
+const isLocked = item => item.status === "decoding" || item.status === "transcribing";
+
+function selectableCard(item, busy) {
+  const locked = isLocked(item);
+  const on = selected.has(item.id);
+  const box = el("input", { type: "checkbox", "aria-label": "Sélectionner " + item.name });
+  box.checked = on;
+  const preview = (bestText(item) || "").slice(0, 140);
+  return el("article", {
+    class: "card selectable" + (on ? " selected" : "") + (locked ? " locked" : ""),
+    onclick: () => {
+      if (locked) { toast("Vocal en cours de traitement"); return; }
+      on ? selected.delete(item.id) : selected.add(item.id);
+      render();
+    },
+  }, [
+    el("label", { class: "pickbox" }, [box, locked ? "En cours…" : (on ? "Sélectionné" : "Toucher pour sélectionner")]),
+    el("div", { class: "meta" }, [el("span", { class: "name", text: item.name })]),
+    el("div", { class: "meta" }, [el("span", { text: fmtDate(item.createdAt) }), item.duration ? el("span", { text: "· " + fmtDur(item.duration) }) : null]),
+    preview ? el("div", { class: "text placeholder", text: preview + (bestText(item).length > 140 ? "…" : "") }) : null,
+  ]);
+}
+
+function setSelecting(on) {
+  selecting = on;
+  selected.clear();
+  document.body.classList.toggle("selecting", on);
   render();
+}
+
+function updateSelBar() {
+  // On oublie les vocaux qui n'existent plus.
+  for (const id of [...selected]) if (!items.some(i => i.id === id)) selected.delete(id);
+  $("selBar").hidden = !selecting;
+  const n = selected.size;
+  $("selCount").textContent = n ? `${n} sélectionné${n > 1 ? "s" : ""}` : "Aucun sélectionné";
+  $("selDelete").disabled = !n;
+  const selectable = items.filter(i => !isLocked(i));
+  $("selAll").textContent = selectable.length && selectable.every(i => selected.has(i.id)) ? "Aucun" : "Tout";
+}
+
+$("selectBtn").addEventListener("click", () => setSelecting(true));
+$("selCancel").addEventListener("click", () => setSelecting(false));
+$("selAll").addEventListener("click", () => {
+  const selectable = items.filter(i => !isLocked(i));
+  const all = selectable.every(i => selected.has(i.id));
+  selected.clear();
+  if (!all) selectable.forEach(i => selected.add(i.id));
+  render();
+});
+$("selDelete").addEventListener("click", async () => {
+  const n = selected.size;
+  const word = n > 1 ? "vocaux" : "vocal";
+  if (!n || !confirm(`Supprimer ${n} ${word} ? C'est définitif.`)) return;
+  for (const item of items.filter(i => selected.has(i.id))) await remove(item, { silent: true });
+  setSelecting(false);
+  toast(`${n} ${word} supprimé${n > 1 ? "s" : ""}`);
+});
+
+/* ---------- Couper un vocal ---------- */
+const trim = { item: null, url: "", duration: 0, stopAt: 0 };
+const trimEls = { dlg: $("trimDlg"), audio: $("trimAudio"), start: $("trimStart"), end: $("trimEnd"),
+  startLbl: $("trimStartLbl"), endLbl: $("trimEndLbl"), info: $("trimInfo"), play: $("trimPlay"), ok: $("trimOk") };
+
+function fmtPrecise(s) {
+  return `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0")}`;
+}
+
+function updateTrimLabels(changed) {
+  let a = Number(trimEls.start.value), b = Number(trimEls.end.value);
+  // Le début reste avant la fin (au moins 0,5 s gardée).
+  if (b - a < 0.5) {
+    if (changed === "start") { a = Math.max(0, b - 0.5); trimEls.start.value = a; }
+    else { b = Math.min(trim.duration, a + 0.5); trimEls.end.value = b; }
+  }
+  trimEls.startLbl.textContent = fmtPrecise(a);
+  trimEls.endLbl.textContent = fmtPrecise(b);
+  trimEls.info.textContent = `Durée gardée : ${fmtDur(b - a)} sur ${fmtDur(trim.duration)}. ` +
+    "L'audio d'origine sera remplacé par ce passage, puis retranscrit (la transcription, la correction et le résumé actuels seront effacés).";
+}
+
+async function openTrim(item) {
+  trim.item = item;
+  trim.url = URL.createObjectURL(item.audio);
+  trimEls.audio.src = trim.url;
+  trim.duration = item.duration || 0;
+  if (!trim.duration) {
+    try { trim.duration = (await decodeAudio(item.audio)).duration; }
+    catch { toast("Impossible de lire ce fichier"); return; }
+  }
+  for (const r of [trimEls.start, trimEls.end]) r.max = trim.duration.toFixed(1);
+  trimEls.start.value = 0;
+  trimEls.end.value = trim.duration.toFixed(1);
+  updateTrimLabels();
+  trimEls.dlg.showModal();
+}
+
+trimEls.start.addEventListener("input", () => updateTrimLabels("start"));
+trimEls.end.addEventListener("input", () => updateTrimLabels("end"));
+trimEls.play.addEventListener("click", () => {
+  trimEls.audio.currentTime = Number(trimEls.start.value);
+  trim.stopAt = Number(trimEls.end.value);
+  trimEls.audio.play().catch(() => {});
+});
+trimEls.audio.addEventListener("timeupdate", () => {
+  if (trim.stopAt && trimEls.audio.currentTime >= trim.stopAt) { trimEls.audio.pause(); trim.stopAt = 0; }
+});
+trimEls.dlg.addEventListener("close", () => {
+  trimEls.audio.pause();
+  const item = trim.item, a = Number(trimEls.start.value), b = Number(trimEls.end.value);
+  if (trim.url) URL.revokeObjectURL(trim.url);
+  trim.url = ""; trim.item = null; trimEls.audio.removeAttribute("src");
+  if (trimEls.dlg.returnValue === "ok" && item) trimItem(item, a, b);
+});
+
+// Fichier WAV mono 16 bits : simple, lisible partout, et directement utilisable par Whisper.
+function encodeWav(samples, rate) {
+  const buf = new ArrayBuffer(44 + samples.length * 2), v = new DataView(buf);
+  const str = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  str(0, "RIFF"); v.setUint32(4, 36 + samples.length * 2, true); str(8, "WAVE");
+  str(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  str(36, "data"); v.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) {
+    const x = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
+  }
+  return new Blob([buf], { type: "audio/wav" });
+}
+
+async function trimItem(item, start, end) {
+  if (isLocked(item)) { toast("Vocal en cours de traitement"); return; }
+  toast("Découpe en cours…");
+  let data;
+  try { ({ data } = await decodeAudio(item.audio, st => setStatus(st, "busy"))); }
+  catch (err) { toast("Découpe impossible : " + err.message); return; }
+  const a = Math.max(0, Math.floor(start * 16000)), b = Math.min(data.length, Math.ceil(end * 16000));
+  if (b - a < 8000) { toast("Passage trop court"); return; }
+  const base = item.name.replace(/ \(coupé\)/, "").replace(/\.[^.]+$/, "");
+  const wav = encodeWav(data.subarray(a, b), 16000);
+  dropAudioEl(item);
+  item.audio = new File([wav], `${base} (coupé).wav`, { type: "audio/wav" });
+  item.name = item.audio.name;
+  item.duration = (b - a) / 16000;
+  for (const k of ["text", "corrected", "summary", "error", "correctError", "summaryError"]) item[k] = "";
+  item.showOriginal = false;
+  item.status = "pending";
+  await save(item);
+  render();
+  processQueue();
 }
 
 /* ---------- Réglages ---------- */
@@ -516,6 +684,7 @@ els.installBtn.addEventListener("click", async () => {
   installEvent = null; els.installBanner.classList.remove("show");
 });
 window.addEventListener("appinstalled", () => els.installBanner.classList.remove("show"));
+$("reloadBtn").addEventListener("click", () => location.reload());
 
 /* ---------- Démarrage ---------- */
 // Modèles déjà enregistrés sur le téléphone, avec leur taille.
@@ -561,6 +730,30 @@ async function showStorageInfo() {
       : persisted === false ? " Stockage non protégé : si le téléphone manque de place, Android peut effacer les modèles (installer l'app aide à le protéger)." : "");
 }
 
+/* ---------- Version de l'app et mises à jour ---------- */
+function versionText() {
+  const d = new Date(APP_VERSION);
+  return "Version du " + d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) +
+    " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function showVersion() {
+  $("appVersion").textContent = "Vocaux · " + versionText();
+  $("versionInfo").textContent = versionText() + ".";
+}
+
+// Quand une nouvelle version est installée en arrière-plan, on propose de recharger.
+function watchForUpdate(reg) {
+  const hadController = !!navigator.serviceWorker.controller;
+  const offer = () => { if (hadController) els.updateBanner.classList.add("show"); };
+  reg.addEventListener("updatefound", () => {
+    const w = reg.installing;
+    if (w) w.addEventListener("statechange", () => { if (w.state === "activated") offer(); });
+  });
+  // Vérifie aussi à chaque retour sur l'app.
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+}
+
 async function takeInbox() {
   // Vocaux reçus via « Partager » (déposés par le service worker).
   let inbox = [];
@@ -584,8 +777,12 @@ async function start() {
   render();
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
 
+  showVersion();
   if ("serviceWorker" in navigator) {
-    try { await navigator.serviceWorker.register("sw.js"); } catch (err) { console.warn("SW", err); }
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js");
+      watchForUpdate(reg);
+    } catch (err) { console.warn("SW", err); }
   }
 
   const shared = await takeInbox();
