@@ -1,0 +1,43 @@
+name: App Android Vocaux
+
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  pull_request:
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Moteur de transcription (sherpa-onnx)
+        run: ./scripts/fetch-sherpa.sh
+      - name: Compiler l'APK
+        run: ./gradlew --no-daemon assembleRelease
+      - name: Garder l'APK (artefact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocaux-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+      - name: Publier l'APK (lien de téléchargement fixe)
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk vocaux.apk
+          gh release view vocaux-android >/dev/null 2>&1 || \
+            gh release create vocaux-android --title "Vocaux pour Android" --notes "Dernière version de l'app Android Vocaux. Télécharge vocaux.apk sur le téléphone et installe-le."
+          gh release upload vocaux-android vocaux.apk --clobber
